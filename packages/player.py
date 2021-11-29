@@ -1,14 +1,3 @@
-from tkinter import *
-from tkinter import ttk
-from tkinter import filedialog
-import os
-import sys
-
-sys.path.append('packages')
-import sf2_loader as rs
-from ast import literal_eval
-
-
 class Root(Tk):
     def __init__(self):
         super(Root, self).__init__()
@@ -58,6 +47,12 @@ class Root(Tk):
                                              command=self.custom_play)
         self.custom_play_button.place(x=230, y=395)
 
+        self.split_channels = IntVar()
+        self.split_channels.set(0)
+        self.split_channels_button = ttk.Checkbutton(
+            self, text='split channels', variable=self.split_channels)
+        self.split_channels_button.place(x=500, y=400)
+
     def show(self, text=''):
         self.msg.configure(text=text)
         self.msg.update()
@@ -91,7 +86,9 @@ class Root(Tk):
             if rs.mp.pygame.mixer.get_busy():
                 rs.mp.pygame.mixer.stop()
             self.show(f'Rendering MIDI file to audio, please wait ...')
-            self.current_sf2.play_midi_file(self.current_midi_file)
+            self.current_sf2.play_midi_file(
+                self.current_midi_file,
+                split_channels=self.split_channels.get())
             self.show(f'Start playing')
 
     def pause_midi(self):
@@ -115,9 +112,11 @@ class Root(Tk):
     def custom_play(self):
         if self.current_midi_file and self.current_soundfont_file:
 
-            current_midi_file = rs.mp.read(self.current_midi_file,
-                                           mode='all',
-                                           to_piece=True)
+            current_midi_file = rs.mp.read(
+                self.current_midi_file,
+                mode='all',
+                to_piece=True,
+                split_channels=self.split_channels.get())
             try:
                 current_instruments = literal_eval(
                     f'[{self.custom_instrument_text.get()}]')
