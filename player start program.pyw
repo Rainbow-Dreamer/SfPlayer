@@ -3,6 +3,12 @@ from tkinter import ttk
 from tkinter import filedialog
 import os
 import sys
+import mido
+import midiutil
+import pygame
+import py
+import pydub
+import fractions
 
 sys.path.append('packages')
 import sf2_loader as rs
