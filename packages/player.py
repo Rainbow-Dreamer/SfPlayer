@@ -52,27 +52,34 @@ class Root(Tk):
         self.split_channels_button = ttk.Checkbutton(
             self, text='split channels', variable=self.split_channels)
         self.split_channels_button.place(x=500, y=400)
+        try:
+            self.choose_midi('resources/demo.mid')
+            self.choose_soundfont('resources/gm.sf2')
+        except:
+            pass
 
     def show(self, text=''):
         self.msg.configure(text=text)
         self.msg.update()
 
-    def choose_midi(self):
-        current_midi_file = filedialog.askopenfilename(
-            initialdir=self.current_path,
-            title="Choose MIDI File",
-            filetypes=(('MIDI files', "*.mid"), ("All files", "*.*")))
+    def choose_midi(self, current_midi_file=None):
+        if current_midi_file is None:
+            current_midi_file = filedialog.askopenfilename(
+                initialdir=self.current_path,
+                title="Choose MIDI File",
+                filetypes=(('MIDI files', "*.mid"), ("All files", "*.*")))
         if current_midi_file:
             self.current_midi_file = current_midi_file
             self.current_midi_label.configure(text=self.current_midi_file)
             self.current_path = os.path.dirname(self.current_midi_file)
 
-    def choose_soundfont(self):
-        current_soundfont_file = filedialog.askopenfilename(
-            initialdir=self.current_path,
-            title="Choose SoundFont File",
-            filetypes=(('SoundFont files', "*.sf2;*.sf3;*.dls"), ("All files",
-                                                                  "*.*")))
+    def choose_soundfont(self, current_soundfont_file=None):
+        if current_soundfont_file is None:
+            current_soundfont_file = filedialog.askopenfilename(
+                initialdir=self.current_path,
+                title="Choose SoundFont File",
+                filetypes=(('SoundFont files', "*.sf2;*.sf3;*.dls"),
+                           ("All files", "*.*")))
         if current_soundfont_file:
             self.current_soundfont_file = current_soundfont_file
             self.current_soundfont_label.configure(
@@ -86,9 +93,15 @@ class Root(Tk):
             if rs.mp.pygame.mixer.get_busy():
                 rs.mp.pygame.mixer.stop()
             self.show(f'Rendering MIDI file to audio, please wait ...')
-            self.current_sf2.play_midi_file(
-                self.current_midi_file,
-                split_channels=self.split_channels.get())
+            try:
+                self.current_sf2.play_midi_file(
+                    self.current_midi_file,
+                    split_channels=self.split_channels.get())
+            except Exception as OSError:
+                self.show(
+                    'Error: The loaded SoundFont file does not contain all the required banks or presets of the MIDI file'
+                )
+                return
             self.show(f'Start playing')
 
     def pause_midi(self):
@@ -131,7 +144,13 @@ class Root(Tk):
             if rs.mp.pygame.mixer.get_busy():
                 rs.mp.pygame.mixer.stop()
             self.show(f'Rendering MIDI file to audio, please wait ...')
-            self.current_sf2.play_piece(current_midi_file)
+            try:
+                self.current_sf2.play_piece(current_midi_file)
+            except Exception as OSError:
+                self.show(
+                    'Error: The loaded SoundFont file does not contain all the required banks or presets of the MIDI file'
+                )
+                return
             self.show(f'Start playing')
 
 
