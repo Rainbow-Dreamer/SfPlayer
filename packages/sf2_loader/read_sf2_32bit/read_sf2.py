@@ -260,14 +260,12 @@ class sf2_loader:
         self.instruments = []
         self.instruments_ind = []
         if file:
-
             self.file.append(file)
             self.sfid = self.synth.sfload(file)
             if self.sfid == -1:
                 raise ValueError('Invalid SoundFont file')
             self.synth.system_reset()
             self.sfid_list.append(copy(self.sfid))
-            self.program_select()
             self.change_channel(0)
         try:
             capture.reset()
@@ -284,15 +282,27 @@ class sf2_loader:
         try:
             current_channel_info = self.synth.channel_info(value)
         except:
-            current_channel_info = 1, 0, 0, ''
-            for i in range(128):
-                try:
-                    self.program_select(value, self.sfid_list[0], 0, i)
-                    current_channel_info = self.synth.channel_info(value)
-                    break
-                except:
-                    pass
+            current_channel_info = self.find_channel_info(value)
         self.current_sfid, self.current_bank, self.current_preset, preset_name = current_channel_info
+
+    def find_channel_info(self, value):
+        try:
+            capture = py.io.StdCaptureFD(out=True, in_=False)
+        except:
+            pass
+        current_sfid = self.sfid_list[0]
+        current_channel_info = current_sfid, 0, 0, ''
+        for i in range(128):
+            select_status = self.synth.program_select(value, current_sfid, 0,
+                                                      i)
+            if select_status != -1:
+                current_channel_info = self.synth.channel_info(value)
+                break
+        try:
+            capture.reset()
+        except:
+            pass
+        return current_channel_info
 
     def __repr__(self):
         return f'''[soundfont loader]
@@ -305,41 +315,60 @@ current bank number: {self.current_bank}
 current preset number: {self.current_preset}
 current preset name: {self.get_current_instrument()}'''
 
-    def program_select(self,
-                       channel=None,
-                       sfid=None,
-                       bank=None,
-                       preset=None,
-                       correct=True,
-                       hide_warnings=True):
+    def change(self,
+               channel=None,
+               sfid=None,
+               bank=None,
+               preset=None,
+               correct=True,
+               hide_warnings=True,
+               mode=0):
         if hide_warnings:
             try:
                 capture = py.io.StdCaptureFD(out=True, in_=False)
             except:
                 pass
-        current_channel = copy(self.current_channel)
-        current_sfid = copy(self.current_sfid)
-        current_bank = copy(self.current_bank)
-        current_preset = copy(self.current_preset)
-        if channel is None:
+        select_status = 0
+        if channel is not None:
+            if mode == 0:
+                self.change_channel(channel)
+        else:
             channel = self.current_channel
-        if sfid is None:
+        try:
+            current_channel_info = self.synth.channel_info(channel)
+        except:
+            current_channel_info = self.find_channel_info(channel)
+        current_sfid, current_bank, current_preset, current_preset_name = current_channel_info
+        if sfid is not None:
+            self.synth.sfont_select(channel, sfid)
+            if channel == self.current_channel:
+                self.current_sfid = sfid
+        else:
             sfid = self.current_sfid
-        if bank is None:
+        if bank is not None:
+            self.synth.sfont_select(channel, bank)
+            if channel == self.current_channel:
+                self.current_bank = bank
+                self.instruments.clear()
+        else:
             bank = self.current_bank
-        else:
-            self.instruments.clear()
-        if preset is None:
-            preset = self.current_preset
-        select_status = self.synth.program_select(channel, sfid, bank, preset)
-        if not (correct and select_status == -1):
-            self.current_channel = channel
-            self.current_sfid = sfid
-            self.current_bank = bank
-            self.current_preset = preset
-        else:
-            self.synth.program_select(current_channel, current_sfid,
-                                      current_bank, current_preset)
+        if preset is not None:
+            select_status = self.synth.program_select(channel, sfid, bank,
+                                                      preset)
+            if select_status == -1:
+                if correct:
+                    self.synth.program_select(channel, current_sfid,
+                                              current_bank, current_preset)
+                    if channel == self.current_channel:
+                        self.current_sfid = current_sfid
+                        self.current_bank = current_bank
+                        self.current_preset = current_preset
+                else:
+                    if channel == self.current_channel:
+                        self.current_preset = preset
+            else:
+                if channel == self.current_channel:
+                    self.current_preset = preset
         if hide_warnings:
             try:
                 capture.reset()
@@ -349,8 +378,7 @@ current preset name: {self.get_current_instrument()}'''
 
     def __lt__(self, preset):
         if type(preset) == tuple and len(preset) == 2:
-            self.program_select(bank=preset[1])
-            self < preset[0]
+            self.change(preset=preset[0], bank=preset[1])
         else:
             if type(preset) == str:
                 if not self.instruments:
@@ -359,9 +387,9 @@ current preset name: {self.get_current_instrument()}'''
                 if preset in self.instruments:
                     current_ind = self.instruments_ind[self.instruments.index(
                         preset)]
-                    self.program_select(preset=current_ind)
+                    self.change(preset=current_ind)
             else:
-                self.program_select(preset=preset)
+                self.change(preset=preset)
 
     def __mod__(self, channel):
         self.change_channel(channel)
@@ -383,35 +411,29 @@ current preset name: {self.get_current_instrument()}'''
         return self.synth.sfpreset_name(sfid, bank, preset)
 
     def get_instrument_name(self,
-                            channel=None,
                             sfid=None,
                             bank=None,
                             preset=None,
                             hide_warnings=True):
-        if channel is None:
-            channel = self.current_channel
-        current_channel = copy(self.current_channel)
-        self.change_channel(channel)
+        channel = self.current_channel
         current_sfid = copy(self.current_sfid)
         current_bank = copy(self.current_bank)
         current_preset = copy(self.current_preset)
-        select_status = self.program_select(channel,
-                                            sfid,
-                                            bank,
-                                            preset,
-                                            hide_warnings=hide_warnings)
+        select_status = self.change(channel,
+                                    sfid,
+                                    bank,
+                                    preset,
+                                    hide_warnings=hide_warnings)
         result = self.synth.channel_info(channel)[3]
-        self.program_select(channel,
-                            current_sfid,
-                            current_bank,
-                            current_preset,
-                            hide_warnings=hide_warnings)
-        self.change_channel(current_channel)
+        self.change(channel,
+                    current_sfid,
+                    current_bank,
+                    current_preset,
+                    hide_warnings=hide_warnings)
         if select_status != -1:
             return result
 
     def get_all_instrument_names(self,
-                                 channel=None,
                                  sfid=None,
                                  bank=None,
                                  max_num=128,
@@ -424,11 +446,11 @@ current preset name: {self.get_current_instrument()}'''
                 capture = py.io.StdCaptureFD(out=True, in_=False)
             except:
                 pass
-        current_channel = copy(self.current_channel)
+        current_channel = self.current_channel
         current_sfid = copy(self.current_sfid)
         current_bank = copy(self.current_bank)
         current_preset = copy(self.current_preset)
-        self.program_select(channel, sfid, bank, hide_warnings=False)
+        self.change(current_channel, sfid, bank, hide_warnings=False)
         result = []
         if get_ind:
             ind = []
@@ -444,11 +466,11 @@ current preset name: {self.get_current_instrument()}'''
                 pass
         if get_ind and return_mode == 0:
             result = {ind[i]: result[i] for i in range(len(result))}
-        self.program_select(current_channel,
-                            current_sfid,
-                            current_bank,
-                            ind[0] if mode == 1 else current_preset,
-                            hide_warnings=False)
+        self.change(current_channel,
+                    current_sfid,
+                    current_bank,
+                    ind[0] if mode == 1 else current_preset,
+                    hide_warnings=False)
         if hide_warnings:
             try:
                 capture.reset()
@@ -506,15 +528,20 @@ current preset name: {self.get_current_instrument()}'''
                     preset)]
                 self.synth.program_select(channel, self.current_sfid,
                                           self.current_bank, current_ind)
+                if channel == self.current_channel:
+                    self.current_preset = current_ind
         else:
             self.synth.program_select(channel, self.current_sfid,
                                       self.current_bank, preset)
+            if channel == self.current_channel:
+                self.current_preset = preset
 
     def change_bank(self, bank, channel=None):
         if channel is None:
             channel = self.current_channel
         self.synth.bank_select(channel, bank)
-        self.current_bank = bank
+        if channel == self.current_channel:
+            self.current_bank = bank
 
     def change_channel(self, channel):
         self.current_channel = channel
@@ -523,7 +550,8 @@ current preset name: {self.get_current_instrument()}'''
         if channel is None:
             channel = self.current_channel
         self.synth.sfont_select(channel, sfid)
-        self.current_sfid = sfid
+        if channel == self.current_channel:
+            self.current_sfid = sfid
 
     def change_soundfont(self, name, channel=None):
         if name in self.file:
@@ -584,9 +612,7 @@ current preset name: {self.get_current_instrument()}'''
                                               frame_rate=frame_rate)
         if channels == 1:
             current_audio = current_audio.set_channels(1)
-        self.synth.system_reset()
-        self.program_select()
-        self.synth.get_samples(int(frame_rate * 1))
+        self.synth.get_samples(int(frame_rate))
         if effects:
             current_audio = process_effect(current_audio, effects, bpm=bpm)
         elif check_effect(current_note):
@@ -743,9 +769,7 @@ current preset name: {self.get_current_instrument()}'''
         if channels == 1:
             current_audio = current_audio.set_channels(1)
         current_silent_audio = current_silent_audio.overlay(current_audio)
-        self.synth.system_reset()
-        self.program_select()
-        self.synth.get_samples(int(frame_rate * 1))
+        self.synth.get_samples(int(frame_rate))
         if effects:
             current_silent_audio = process_effect(current_silent_audio,
                                                   effects,
@@ -819,17 +843,18 @@ current preset name: {self.get_current_instrument()}'''
 
             current_track_channel = current_chord.channels[
                 i] if current_chord.channels else i
-            self.change_channel(current_instrument[2] if len(
-                current_instrument) > 2 else current_track_channel)
+            current_channel = current_instrument[2] if len(
+                current_instrument) > 2 else current_track_channel
+            self.change_channel(current_channel)
             current_channel = copy(self.current_channel)
             current_sfid = copy(self.current_sfid)
             current_bank = copy(self.current_bank)
             current_preset = copy(self.current_preset)
 
-            self.program_select(sfid=(current_instrument[3] if
-                                      len(current_instrument) > 3 else None),
-                                bank=current_instrument[1],
-                                preset=current_instrument[0])
+            self.change(sfid=(current_instrument[3]
+                              if len(current_instrument) > 3 else None),
+                        bank=current_instrument[1],
+                        preset=current_instrument[0])
 
             current_audio = self.export_chord(
                 each, decay if not decay_is_list else decay[i],
@@ -842,13 +867,11 @@ current preset name: {self.get_current_instrument()}'''
             silent_audio = silent_audio.overlay(current_audio,
                                                 position=current_start_time)
 
-            self.program_select(current_channel, current_sfid, current_bank,
-                                current_preset)
+            self.change(current_channel, current_sfid, current_bank,
+                        current_preset)
 
-        self.synth.system_reset()
         self.change_channel(whole_current_channel)
-        self.program_select()
-        self.synth.get_samples(int(frame_rate * 1))
+        self.synth.get_samples(int(frame_rate))
         if effects:
             silent_audio = process_effect(silent_audio, effects, bpm=bpm)
         elif check_effect(current_chord):
@@ -1031,7 +1054,7 @@ current preset name: {self.get_current_instrument()}'''
         current_sfid = copy(self.current_sfid)
         current_bank = copy(self.current_bank)
         current_preset = copy(self.current_preset)
-        self.program_select(channel, sfid, bank, preset)
+        self.change(channel, sfid, bank, preset)
         if type(start) != mp.note:
             start = mp.N(start)
         if type(stop) != mp.note:
@@ -1065,8 +1088,8 @@ current preset name: {self.get_current_instrument()}'''
                              name=current_name,
                              export_args=export_args)
         print('exporting finished')
-        self.program_select(current_channel, current_sfid, current_bank,
-                            current_preset)
+        self.change(current_channel, current_sfid, current_bank,
+                    current_preset)
 
     def reload(self, file):
         try:
@@ -1086,7 +1109,6 @@ current preset name: {self.get_current_instrument()}'''
         self.current_preset = 0
         self.instruments = []
         self.instruments_ind = []
-        self.program_select()
         self.change_channel(0)
         try:
             capture.reset()
@@ -1105,11 +1127,9 @@ current preset name: {self.get_current_instrument()}'''
             capture.reset()
         except:
             pass
-        self.synth.system_reset()
         self.file.append(file)
         self.sfid_list.append(current_sfid)
         if len(self.file) == 1:
-            self.program_select()
             self.change_channel(0)
 
     def unload(self, ind):

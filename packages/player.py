@@ -52,6 +52,10 @@ class Root(Tk):
         self.split_channels_button = ttk.Checkbutton(
             self, text='split channels', variable=self.split_channels)
         self.split_channels_button.place(x=500, y=400)
+        self.export_audio_button = ttk.Button(self,
+                                              text='Export as audio',
+                                              command=self.export_audio)
+        self.export_audio_button.place(x=650, y=300)
         try:
             self.choose_midi('resources/demo.mid')
             self.choose_soundfont('resources/gm.sf2')
@@ -121,6 +125,30 @@ class Root(Tk):
             rs.mp.pygame.mixer.stop()
             self.paused = False
             self.show(f'Stop playing')
+
+    def export_audio(self):
+        file_name = filedialog.asksaveasfile(initialdir=self.current_path,
+                                             title="Export as audio",
+                                             defaultextension='.wav',
+                                             filetypes=(("All files",
+                                                         "*.*"), ),
+                                             initialfile='Untitled.wav')
+        if not file_name:
+            return
+        file_name = file_name.name
+        self.show(f'Start exporting')
+        try:
+            self.current_sf2.export_midi_file(
+                self.current_midi_file,
+                split_channels=self.split_channels.get(),
+                name=file_name,
+                format=os.path.splitext(file_name)[1][1:])
+        except Exception as OSError:
+            self.show(
+                'Error: The loaded SoundFont file does not contain all the required banks or presets of the MIDI file'
+            )
+            return
+        self.show(f'Finish exporting')
 
     def custom_play(self):
         if self.current_midi_file and self.current_soundfont_file:
