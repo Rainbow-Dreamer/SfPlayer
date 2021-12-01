@@ -12,7 +12,7 @@ class Root(Tk):
         self.choose_soundfont_button.place(x=50, y=200)
         self.current_midi_file = None
         self.current_soundfont_file = None
-        self.current_sf2 = None
+        self.current_sf2 = rs.sf2_player()
         self.current_midi_label = ttk.Label(self, text='Not chosen')
         self.current_soundfont_label = ttk.Label(self, text='Not chosen')
         self.current_midi_label.place(x=200, y=102)
@@ -85,23 +85,24 @@ class Root(Tk):
                 filetypes=(('SoundFont files', "*.sf2;*.sf3;*.dls"),
                            ("All files", "*.*")))
         if current_soundfont_file:
-            self.current_soundfont_file = current_soundfont_file
-            self.current_soundfont_label.configure(
-                text=self.current_soundfont_file)
-            self.current_soundfont_label.update()
-            self.current_sf2 = rs.sf2_loader(self.current_soundfont_file)
-            self.current_path = os.path.dirname(self.current_soundfont_file)
+            try:
+                self.current_sf2.load(current_soundfont_file)
+                self.current_soundfont_file = current_soundfont_file
+                self.current_path = os.path.dirname(
+                    self.current_soundfont_file)
+                self.current_soundfont_label.configure(
+                    text=self.current_soundfont_file)
+                self.current_soundfont_label.update()
+            except:
+                self.show('Invalid SoundFont file')
 
     def play_midi(self):
         if self.current_midi_file and self.current_soundfont_file:
-            if rs.mp.pygame.mixer.get_busy():
-                rs.mp.pygame.mixer.stop()
-            self.show(f'Rendering MIDI file to audio, please wait ...')
             try:
-                self.current_sf2.play_midi_file(
-                    self.current_midi_file,
-                    split_channels=self.split_channels.get())
+                self.current_sf2.play_midi_file(self.current_midi_file)
             except Exception as OSError:
+                import traceback
+                print(traceback.format_exc())
                 self.show(
                     'Error: The loaded SoundFont file does not contain all the required banks or presets of the MIDI file'
                 )
@@ -109,22 +110,22 @@ class Root(Tk):
             self.show(f'Start playing')
 
     def pause_midi(self):
-        if rs.mp.pygame.mixer.get_busy():
-            rs.mp.pygame.mixer.pause()
+        if self.current_sf2.playing:
             self.paused = True
             self.show(f'Pause playing')
+            self.current_sf2.pause()
 
     def unpause_midi(self):
         if self.paused:
-            rs.mp.pygame.mixer.unpause()
             self.paused = False
             self.show(f'Continue playing')
+            self.current_sf2.unpause()
 
     def stop_midi(self):
-        if rs.mp.pygame.mixer.get_busy():
-            rs.mp.pygame.mixer.stop()
+        if self.current_sf2.playing:
             self.paused = False
             self.show(f'Stop playing')
+            self.current_sf2.stop()
 
     def export_audio(self):
         file_name = filedialog.asksaveasfile(initialdir=self.current_path,
@@ -137,13 +138,20 @@ class Root(Tk):
             return
         file_name = file_name.name
         self.show(f'Start exporting')
+        if self.current_soundfont_file:
+            current_sf2 = rs.sf2_loader(self.current_soundfont_file)
+        else:
+            self.show('Please choose a SoundFont file')
+            return
         try:
-            self.current_sf2.export_midi_file(
+            current_sf2.export_midi_file(
                 self.current_midi_file,
                 split_channels=self.split_channels.get(),
                 name=file_name,
                 format=os.path.splitext(file_name)[1][1:])
         except Exception as OSError:
+            import traceback
+            print(traceback.format_exc())
             self.show(
                 'Error: The loaded SoundFont file does not contain all the required banks or presets of the MIDI file'
             )
@@ -169,12 +177,12 @@ class Root(Tk):
                     len(current_instruments):]
             current_midi_file.change_instruments(current_instruments)
             current_midi_file.clear_program_change()
-            if rs.mp.pygame.mixer.get_busy():
-                rs.mp.pygame.mixer.stop()
-            self.show(f'Rendering MIDI file to audio, please wait ...')
+            rs.mp.write(current_midi_file, name='temp.mid')
             try:
-                self.current_sf2.play_piece(current_midi_file)
+                self.current_sf2.play_midi_file('temp.mid')
             except Exception as OSError:
+                import traceback
+                print(traceback.format_exc())
                 self.show(
                     'Error: The loaded SoundFont file does not contain all the required banks or presets of the MIDI file'
                 )
