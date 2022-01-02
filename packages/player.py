@@ -163,8 +163,6 @@ class Root(Tk):
 
             current_midi_file = rs.mp.read(
                 self.current_midi_file,
-                mode='all',
-                to_piece=True,
                 split_channels=self.split_channels.get())
             try:
                 current_instruments = literal_eval(
