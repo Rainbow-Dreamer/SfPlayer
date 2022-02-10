@@ -1,4 +1,5 @@
 class Root(Tk):
+
     def __init__(self):
         super(Root, self).__init__()
         self.minsize(850, 600)
@@ -62,6 +63,19 @@ class Root(Tk):
         except:
             pass
 
+        self.modulation_before_label = ttk.Label(self, text='From mode')
+        self.modulation_before_label.place(x=50, y=500)
+        self.modulation_before_entry = ttk.Entry(self, width=10)
+        self.modulation_before_entry.place(x=150, y=500)
+        self.modulation_after_label = ttk.Label(self, text='To mode')
+        self.modulation_after_label.place(x=250, y=500)
+        self.modulation_after_entry = ttk.Entry(self, width=10)
+        self.modulation_after_entry.place(x=350, y=500)
+        self.modulation_play_button = ttk.Button(self,
+                                                 text='Play Modulation',
+                                                 command=self.play_modulation)
+        self.modulation_play_button.place(x=500, y=500)
+
     def show(self, text=''):
         self.msg.configure(text=text)
         self.msg.update()
@@ -101,8 +115,6 @@ class Root(Tk):
             try:
                 self.current_sf2.play_midi_file(self.current_midi_file)
             except Exception as OSError:
-                import traceback
-                print(traceback.format_exc())
                 self.show(
                     'Error: The loaded SoundFont file does not contain all the required banks or presets of the MIDI file'
                 )
@@ -150,8 +162,6 @@ class Root(Tk):
                 name=file_name,
                 format=os.path.splitext(file_name)[1][1:])
         except Exception as OSError:
-            import traceback
-            print(traceback.format_exc())
             self.show(
                 'Error: The loaded SoundFont file does not contain all the required banks or presets of the MIDI file'
             )
@@ -179,8 +189,26 @@ class Root(Tk):
             try:
                 self.current_sf2.play_midi_file('temp.mid')
             except Exception as OSError:
-                import traceback
-                print(traceback.format_exc())
+                self.show(
+                    'Error: The loaded SoundFont file does not contain all the required banks or presets of the MIDI file'
+                )
+                return
+            self.show(f'Start playing')
+
+    def play_modulation(self):
+        if self.current_midi_file and self.current_soundfont_file:
+            try:
+                before_mode = rs.mp.S(self.modulation_before_entry.get())
+                after_mode = rs.mp.S(self.modulation_after_entry.get())
+                rs.mp.write(rs.mp.read(self.current_midi_file).modulation(
+                    before_mode, after_mode),
+                            name='modulation.mid')
+            except:
+                self.show('Error: Invalid mode')
+                return
+            try:
+                self.current_sf2.play_midi_file('modulation.mid')
+            except Exception as OSError:
                 self.show(
                     'Error: The loaded SoundFont file does not contain all the required banks or presets of the MIDI file'
                 )
