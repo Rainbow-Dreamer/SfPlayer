@@ -13,6 +13,7 @@ class Root(Tk):
         self.choose_soundfont_button.place(x=50, y=200)
         self.current_midi_file = None
         self.current_soundfont_file = None
+        self.current_midi_file_read = None
         self.current_sf2 = rs.sf2_player()
         self.current_midi_label = ttk.Label(self, text='Not chosen')
         self.current_soundfont_label = ttk.Label(self, text='Not chosen')
@@ -76,6 +77,13 @@ class Root(Tk):
                                                  command=self.play_modulation)
         self.modulation_play_button.place(x=500, y=500)
 
+        self.play_as_midi = IntVar()
+        self.play_as_midi.set(0)
+        self.play_as_midi_button = ttk.Checkbutton(self,
+                                                   text='play as MIDI',
+                                                   variable=self.play_as_midi)
+        self.play_as_midi_button.place(x=650, y=400)
+
     def show(self, text=''):
         self.msg.configure(text=text)
         self.msg.update()
@@ -88,6 +96,7 @@ class Root(Tk):
                 filetypes=(('MIDI files', "*.mid"), ("All files", "*.*")))
         if current_midi_file:
             self.current_midi_file = current_midi_file
+            self.current_midi_file_read = None
             self.current_midi_label.configure(text=self.current_midi_file)
             self.current_path = os.path.dirname(self.current_midi_file)
 
@@ -113,8 +122,16 @@ class Root(Tk):
     def play_midi(self):
         if self.current_midi_file and self.current_soundfont_file:
             try:
-                self.current_sf2.play_midi_file(self.current_midi_file)
+                if self.play_as_midi.get() == 0:
+                    self.current_sf2.play_midi_file(self.current_midi_file)
+                else:
+                    if not self.current_midi_file_read:
+                        self.current_midi_file_read = rs.mp.read(
+                            self.current_midi_file)
+                    rs.mp.play(self.current_midi_file_read)
             except Exception as OSError:
+                import traceback
+                print(traceback.format_exc())
                 self.show(
                     'Error: The loaded SoundFont file does not contain all the required banks or presets of the MIDI file'
                 )
@@ -126,18 +143,21 @@ class Root(Tk):
             self.paused = True
             self.show(f'Pause playing')
             self.current_sf2.pause()
+        pygame.mixer.music.pause()
 
     def unpause_midi(self):
         if self.paused:
             self.paused = False
             self.show(f'Continue playing')
             self.current_sf2.unpause()
+        pygame.mixer.music.unpause()
 
     def stop_midi(self):
         if self.current_sf2.playing:
             self.paused = False
             self.show(f'Stop playing')
             self.current_sf2.stop()
+        pygame.mixer.music.stop()
 
     def export_audio(self):
         file_name = filedialog.asksaveasfile(initialdir=self.current_path,
@@ -187,7 +207,10 @@ class Root(Tk):
             current_midi_file.clear_program_change()
             rs.mp.write(current_midi_file, name='temp.mid')
             try:
-                self.current_sf2.play_midi_file('temp.mid')
+                if self.play_as_midi.get() == 0:
+                    self.current_sf2.play_midi_file('temp.mid')
+                else:
+                    rs.mp.play(current_midi_file)
             except Exception as OSError:
                 self.show(
                     'Error: The loaded SoundFont file does not contain all the required banks or presets of the MIDI file'
@@ -200,14 +223,17 @@ class Root(Tk):
             try:
                 before_mode = rs.mp.S(self.modulation_before_entry.get())
                 after_mode = rs.mp.S(self.modulation_after_entry.get())
-                rs.mp.write(rs.mp.read(self.current_midi_file).modulation(
-                    before_mode, after_mode),
-                            name='modulation.mid')
+                modulation_piece = rs.mp.read(
+                    self.current_midi_file).modulation(before_mode, after_mode)
+                rs.mp.write(modulation_piece, name='modulation.mid')
             except:
                 self.show('Error: Invalid mode')
                 return
             try:
-                self.current_sf2.play_midi_file('modulation.mid')
+                if self.play_as_midi.get() == 0:
+                    self.current_sf2.play_midi_file('modulation.mid')
+                else:
+                    rs.mp.play(modulation_piece)
             except Exception as OSError:
                 self.show(
                     'Error: The loaded SoundFont file does not contain all the required banks or presets of the MIDI file'
