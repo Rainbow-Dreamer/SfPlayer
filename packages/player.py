@@ -1,3 +1,7 @@
+with open('packages/config.py', encoding='utf-8') as f:
+    exec(f.read())
+
+
 class Root(Tk):
 
     def __init__(self):
@@ -66,16 +70,16 @@ class Root(Tk):
 
         self.modulation_before_label = ttk.Label(self, text='From mode')
         self.modulation_before_label.place(x=50, y=500)
-        self.modulation_before_entry = ttk.Entry(self, width=10)
+        self.modulation_before_entry = ttk.Entry(self, width=20)
         self.modulation_before_entry.place(x=150, y=500)
         self.modulation_after_label = ttk.Label(self, text='To mode')
-        self.modulation_after_label.place(x=250, y=500)
-        self.modulation_after_entry = ttk.Entry(self, width=10)
-        self.modulation_after_entry.place(x=350, y=500)
+        self.modulation_after_label.place(x=320, y=500)
+        self.modulation_after_entry = ttk.Entry(self, width=20)
+        self.modulation_after_entry.place(x=400, y=500)
         self.modulation_play_button = ttk.Button(self,
                                                  text='Play Modulation',
                                                  command=self.play_modulation)
-        self.modulation_play_button.place(x=500, y=500)
+        self.modulation_play_button.place(x=580, y=495)
 
         self.play_as_midi = IntVar()
         self.play_as_midi.set(0)
@@ -121,8 +125,15 @@ class Root(Tk):
 
     def play_midi(self):
         if self.current_midi_file and self.current_soundfont_file:
+            if self.current_sf2.playing:
+                self.current_sf2.stop()
+            if pygame.mixer.music.get_busy():
+                pygame.mixer.music.stop()
             try:
                 if self.play_as_midi.get() == 0:
+                    if load_sf2_mode == 1:
+                        self.current_sf2 = rs.sf2_player(
+                            self.current_soundfont_file)
                     self.current_sf2.play_midi_file(self.current_midi_file)
                 else:
                     if not self.current_midi_file_read:
@@ -157,7 +168,8 @@ class Root(Tk):
             self.paused = False
             self.show(f'Stop playing')
             self.current_sf2.stop()
-        pygame.mixer.music.stop()
+        if pygame.mixer.music.get_busy():
+            pygame.mixer.music.stop()
 
     def export_audio(self):
         file_name = filedialog.asksaveasfile(initialdir=self.current_path,
@@ -191,6 +203,11 @@ class Root(Tk):
     def custom_play(self):
         if self.current_midi_file and self.current_soundfont_file:
 
+            if self.current_sf2.playing:
+                self.current_sf2.stop()
+            if pygame.mixer.music.get_busy():
+                pygame.mixer.music.stop()
+
             current_midi_file = rs.mp.read(
                 self.current_midi_file,
                 split_channels=self.split_channels.get())
@@ -208,6 +225,9 @@ class Root(Tk):
             rs.mp.write(current_midi_file, name='temp.mid')
             try:
                 if self.play_as_midi.get() == 0:
+                    if load_sf2_mode == 1:
+                        self.current_sf2 = rs.sf2_player(
+                            self.current_soundfont_file)
                     self.current_sf2.play_midi_file('temp.mid')
                 else:
                     rs.mp.play(current_midi_file)
@@ -230,7 +250,14 @@ class Root(Tk):
                 self.show('Error: Invalid mode')
                 return
             try:
+                if self.current_sf2.playing:
+                    self.current_sf2.stop()
+                if pygame.mixer.music.get_busy():
+                    pygame.mixer.music.stop()
                 if self.play_as_midi.get() == 0:
+                    if load_sf2_mode == 1:
+                        self.current_sf2 = rs.sf2_player(
+                            self.current_soundfont_file)
                     self.current_sf2.play_midi_file('modulation.mid')
                 else:
                     rs.mp.play(modulation_piece)
