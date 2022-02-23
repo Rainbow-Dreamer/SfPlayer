@@ -11,18 +11,24 @@ class Root(Tk):
         self.choose_midi_button = ttk.Button(self,
                                              text='Choose MIDI File',
                                              command=self.choose_midi)
-        self.choose_midi_button.place(x=50, y=100)
+        self.choose_midi_button.place(x=50, y=50)
         self.choose_soundfont_button = ttk.Button(
             self, text='Choose SoundFont File', command=self.choose_soundfont)
-        self.choose_soundfont_button.place(x=50, y=200)
+        self.choose_soundfont_button.place(x=50, y=150)
         self.current_midi_file = None
         self.current_soundfont_file = None
         self.current_midi_file_read = None
         self.current_sf2 = rs.sf2_player()
         self.current_midi_label = ttk.Label(self, text='Not chosen')
         self.current_soundfont_label = ttk.Label(self, text='Not chosen')
-        self.current_midi_label.place(x=200, y=102)
-        self.current_soundfont_label.place(x=200, y=202)
+        self.current_midi_label.place(x=200, y=52)
+        self.current_soundfont_label.place(x=200, y=152)
+        self.detect_key_button = ttk.Button(self,
+                                            text='Detect Key',
+                                            command=self.detect_key)
+        self.detect_key_button.place(x=50, y=220)
+        self.detect_key_label = ttk.Label(self, text='')
+        self.detect_key_label.place(x=180, y=220)
         self.play_button = ttk.Button(self,
                                       text='Play',
                                       command=self.play_midi)
@@ -49,17 +55,17 @@ class Root(Tk):
         self.custom_instrument_text = ttk.Entry(self, width=60)
         self.custom_instrument_text.place(x=50, y=430)
         self.custom_play_button = ttk.Button(self,
-                                             text='Custom play',
+                                             text='Custom Play',
                                              command=self.custom_play)
         self.custom_play_button.place(x=230, y=395)
 
         self.split_channels = IntVar()
         self.split_channels.set(0)
         self.split_channels_button = ttk.Checkbutton(
-            self, text='split channels', variable=self.split_channels)
+            self, text='Split Channels', variable=self.split_channels)
         self.split_channels_button.place(x=500, y=400)
         self.export_audio_button = ttk.Button(self,
-                                              text='Export as audio',
+                                              text='Export As Audio',
                                               command=self.export_audio)
         self.export_audio_button.place(x=650, y=300)
         try:
@@ -68,11 +74,11 @@ class Root(Tk):
         except:
             pass
 
-        self.modulation_before_label = ttk.Label(self, text='From mode')
+        self.modulation_before_label = ttk.Label(self, text='From Mode')
         self.modulation_before_label.place(x=50, y=500)
         self.modulation_before_entry = ttk.Entry(self, width=20)
         self.modulation_before_entry.place(x=150, y=500)
-        self.modulation_after_label = ttk.Label(self, text='To mode')
+        self.modulation_after_label = ttk.Label(self, text='to Mode')
         self.modulation_after_label.place(x=320, y=500)
         self.modulation_after_entry = ttk.Entry(self, width=20)
         self.modulation_after_entry.place(x=400, y=500)
@@ -84,7 +90,7 @@ class Root(Tk):
         self.play_as_midi = IntVar()
         self.play_as_midi.set(0)
         self.play_as_midi_button = ttk.Checkbutton(self,
-                                                   text='play as MIDI',
+                                                   text='Play as MIDI',
                                                    variable=self.play_as_midi)
         self.play_as_midi_button.place(x=650, y=400)
 
@@ -270,6 +276,15 @@ class Root(Tk):
                 )
                 return
             self.show(f'Start playing')
+
+    def detect_key(self):
+        if not self.current_midi_file_read:
+            self.current_midi_file_read = rs.mp.read(
+                self.current_midi_file,
+                split_channels=self.split_channels.get())
+        current_key = rs.mp.detect_scale(
+            self.current_midi_file_read.merge()[1])
+        self.detect_key_label.configure(text=str(current_key))
 
 
 root = Root()
