@@ -138,7 +138,8 @@ class Root(Tk):
                 else:
                     if not self.current_midi_file_read:
                         self.current_midi_file_read = rs.mp.read(
-                            self.current_midi_file)
+                            self.current_midi_file,
+                            split_channels=self.split_channels.get())
                     rs.mp.play(self.current_midi_file_read)
             except Exception as OSError:
                 import traceback
@@ -244,7 +245,9 @@ class Root(Tk):
                 before_mode = rs.mp.S(self.modulation_before_entry.get())
                 after_mode = rs.mp.S(self.modulation_after_entry.get())
                 modulation_piece = rs.mp.read(
-                    self.current_midi_file).modulation(before_mode, after_mode)
+                    self.current_midi_file,
+                    split_channels=self.split_channels.get()).modulation(
+                        before_mode, after_mode)
                 rs.mp.write(modulation_piece, name='modulation.mid')
             except:
                 self.show('Error: Invalid mode')
