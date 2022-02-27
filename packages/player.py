@@ -14,7 +14,7 @@ class Root(Tk):
         self.choose_midi_button.place(x=50, y=50)
         self.choose_soundfont_button = ttk.Button(
             self, text='Choose SoundFont File', command=self.choose_soundfont)
-        self.choose_soundfont_button.place(x=50, y=150)
+        self.choose_soundfont_button.place(x=50, y=120)
         self.current_midi_file = None
         self.current_soundfont_file = None
         self.current_midi_file_read = None
@@ -22,7 +22,7 @@ class Root(Tk):
         self.current_midi_label = ttk.Label(self, text='Not chosen')
         self.current_soundfont_label = ttk.Label(self, text='Not chosen')
         self.current_midi_label.place(x=200, y=52)
-        self.current_soundfont_label.place(x=200, y=152)
+        self.current_soundfont_label.place(x=200, y=122)
         self.detect_key_button = ttk.Button(self,
                                             text='Detect Key',
                                             command=self.detect_key)
@@ -283,7 +283,7 @@ class Root(Tk):
                 self.current_midi_file,
                 split_channels=self.split_channels.get())
         current_key = rs.mp.detect_scale(
-            self.current_midi_file_read.merge()[1])
+            self.current_midi_file_read.quick_merge())
         self.detect_key_label.configure(text=str(current_key))
 
 
