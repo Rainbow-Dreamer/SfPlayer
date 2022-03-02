@@ -226,7 +226,14 @@ class Root(TkinterDnD.Tk):
 
     def init_player_bar(self, midi_file):
         if self.current_midi_object is None:
-            self.current_midi_object = mido.MidiFile(midi_file)
+            try:
+                self.current_midi_object = mido.MidiFile(midi_file, clip=True)
+            except IOError:
+                current_riff_midi_file = rs.mp.riff_to_midi(midi_file)
+                with open('riff.mid', 'wb') as f:
+                    f.write(current_riff_midi_file.getbuffer())
+                self.current_midi_file = 'riff.mid'
+                self.current_midi_object = mido.MidiFile('riff.mid', clip=True)
             self.current_midi_length = self.current_midi_object.length
             self.total_length = self.second_to_time_label(
                 self.current_midi_length)
