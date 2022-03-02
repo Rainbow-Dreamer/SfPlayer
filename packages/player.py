@@ -2,13 +2,15 @@ with open('packages/config.py', encoding='utf-8') as f:
     exec(f.read())
 
 
-class Root(Tk):
+class Root(TkinterDnD.Tk):
 
     def __init__(self):
         super(Root, self).__init__()
         self.minsize(850, 600)
         self.title('SoundFont MIDI Player')
         self.configure(bg='white')
+        self.drop_target_register(DND_FILES)
+        self.dnd_bind('<<Drop>>', self.drag_files)
 
         style = ttk.Style()
         style.configure('TLabel', background='white')
@@ -116,6 +118,15 @@ class Root(Tk):
             import traceback
             print(traceback.format_exc())
             pass
+
+    def drag_files(self, e):
+        current_file = e.data[1:-1]
+        if os.path.isfile(current_file):
+            extension = os.path.splitext(current_file)[1][1:]
+            if extension.lower() == 'mid':
+                self.choose_midi(current_file)
+            elif extension.lower() in ['sf2', 'sf3', 'dls']:
+                self.choose_soundfont(current_file)
 
     def player_bar_move(self):
         if self.current_sf2.get_status() == 3:
