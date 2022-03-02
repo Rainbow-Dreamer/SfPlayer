@@ -30,8 +30,8 @@ class Root(Tk):
         self.current_sf2 = rs.sf2_player()
         self.current_midi_label = ttk.Label(self, text='Not chosen')
         self.current_soundfont_label = ttk.Label(self, text='Not chosen')
-        self.current_midi_label.place(x=200, y=52)
-        self.current_soundfont_label.place(x=200, y=112)
+        self.current_midi_label.place(x=220, y=52)
+        self.current_soundfont_label.place(x=220, y=112)
         self.detect_key_button = ttk.Button(self,
                                             text='Detect Key',
                                             command=self.detect_key)
@@ -65,7 +65,7 @@ class Root(Tk):
         self.custom_play_button = ttk.Button(self,
                                              text='Custom Play',
                                              command=self.custom_play)
-        self.custom_play_button.place(x=230, y=395)
+        self.custom_play_button.place(x=230, y=390)
 
         self.split_channels = IntVar()
         self.split_channels.set(0)
