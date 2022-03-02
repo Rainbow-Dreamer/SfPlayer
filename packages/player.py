@@ -7,7 +7,7 @@ class Root(TkinterDnD.Tk):
     def __init__(self):
         super(Root, self).__init__()
         self.minsize(850, 600)
-        self.title('SoundFont MIDI Player')
+        self.title('SfPlayer')
         self.configure(bg='white')
         self.drop_target_register(DND_FILES)
         self.dnd_bind('<<Drop>>', self.drag_files)
