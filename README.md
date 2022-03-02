@@ -37,6 +37,12 @@ Click on `Choose MIDI File` button to select a MIDI file, click on `Choose Sound
 
 
 
+## Download
+
+Click [here](https://github.com/Rainbow-Dreamer/SfPlayer/archive/refs/heads/main.zip) to download the latest version of SfPlayer.
+
+
+
 ## TODO
 
 * Adding SoundFont and MIDI related parameters control widgets
