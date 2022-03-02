@@ -9,7 +9,7 @@ SfPlayer is a simple SoundFont player that has the following functionality:
 
 * Drag and drop support of MIDI files and SoundFont files
 
-* Support Standard MIDI File (SMF) and RIFF MIDI file format for MIDI files, sf2 / sf3 / dls for SoundFont files
+* Support Standard MIDI File (SMF) and RIFF MIDI file for MIDI files, sf2 / sf3 / dls for SoundFont files
 
 * Export rendered audio of MIDI file with the SoundFont file it plays with to mp3 / wav / ogg files and so on
 
