@@ -109,6 +109,7 @@ class Root(Tk):
             self.current_midi_file_read = None
             self.current_midi_label.configure(text=self.current_midi_file)
             self.current_path = os.path.dirname(self.current_midi_file)
+            self.current_midi_object = mido.MidiFile(current_midi_file)
 
     def choose_soundfont(self, current_soundfont_file=None):
         if current_soundfont_file is None:
