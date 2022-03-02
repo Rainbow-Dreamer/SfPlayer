@@ -14,7 +14,7 @@ class Root(Tk):
         self.choose_midi_button.place(x=50, y=50)
         self.choose_soundfont_button = ttk.Button(
             self, text='Choose SoundFont File', command=self.choose_soundfont)
-        self.choose_soundfont_button.place(x=50, y=120)
+        self.choose_soundfont_button.place(x=50, y=110)
         self.current_midi_file = None
         self.current_soundfont_file = None
         self.current_midi_file_read = None
@@ -22,13 +22,13 @@ class Root(Tk):
         self.current_midi_label = ttk.Label(self, text='Not chosen')
         self.current_soundfont_label = ttk.Label(self, text='Not chosen')
         self.current_midi_label.place(x=200, y=52)
-        self.current_soundfont_label.place(x=200, y=122)
+        self.current_soundfont_label.place(x=200, y=112)
         self.detect_key_button = ttk.Button(self,
                                             text='Detect Key',
                                             command=self.detect_key)
-        self.detect_key_button.place(x=50, y=220)
+        self.detect_key_button.place(x=50, y=170)
         self.detect_key_label = ttk.Label(self, text='')
-        self.detect_key_label.place(x=180, y=220)
+        self.detect_key_label.place(x=180, y=170)
         self.play_button = ttk.Button(self,
                                       text='Play',
                                       command=self.play_midi)
@@ -68,11 +68,6 @@ class Root(Tk):
                                               text='Export As Audio',
                                               command=self.export_audio)
         self.export_audio_button.place(x=650, y=300)
-        try:
-            self.choose_midi('resources/demo.mid')
-            self.choose_soundfont('resources/gm.sf2')
-        except:
-            pass
 
         self.modulation_before_label = ttk.Label(self, text='From Mode')
         self.modulation_before_label.place(x=50, y=500)
@@ -94,6 +89,35 @@ class Root(Tk):
                                                    variable=self.play_as_midi)
         self.play_as_midi_button.place(x=650, y=400)
 
+        self.player_bar = ttk.Progressbar(self,
+                                          orient=HORIZONTAL,
+                                          length=600,
+                                          mode='determinate')
+        self.player_bar.place(x=50, y=230)
+        self.current_second = 0
+        self.bar_move_id = None
+        self.player_bar_time = ttk.Label(self, text='00:00:00 / 00:00:00')
+        self.player_bar_time.place(x=670, y=230)
+
+        try:
+            self.choose_midi('resources/demo.mid')
+            self.choose_soundfont('resources/gm.sf2')
+        except:
+            import traceback
+            print(traceback.format_exc())
+            pass
+
+    def player_bar_move(self):
+        self.current_second += 1
+        self.player_bar['value'] = (self.current_second /
+                                    self.current_midi_length) * 100
+        self.bar_move_id = self.after(1000, self.player_bar_move)
+        self.player_bar_set_time(self.current_second)
+
+    def player_bar_set_time(self, time):
+        self.player_bar_time.configure(
+            text=f'{self.second_to_time_label(time)} / {self.total_length}')
+
     def show(self, text=''):
         self.msg.configure(text=text)
         self.msg.update()
@@ -109,7 +133,14 @@ class Root(Tk):
             self.current_midi_file_read = None
             self.current_midi_label.configure(text=self.current_midi_file)
             self.current_path = os.path.dirname(self.current_midi_file)
-            self.current_midi_object = mido.MidiFile(current_midi_file)
+
+    def second_to_time_label(self, second):
+        current_hour = int(second / 3600)
+        current_minute = int((second - 3600 * current_hour) / 60)
+        current_second = int(
+            (second - 3600 * current_hour - 60 * current_minute))
+        result = f'{current_hour:02d}:{current_minute:02d}:{current_second:02d}'
+        return result
 
     def choose_soundfont(self, current_soundfont_file=None):
         if current_soundfont_file is None:
@@ -130,12 +161,26 @@ class Root(Tk):
             except:
                 self.show('Invalid SoundFont file')
 
+    def init_player_bar(self, midi_file):
+        self.current_midi_object = mido.MidiFile(midi_file)
+        self.current_midi_length = self.current_midi_object.length
+        self.total_length = self.second_to_time_label(self.current_midi_length)
+        if self.bar_move_id:
+            self.after_cancel(self.bar_move_id)
+        self.player_bar['value'] = 0
+        self.current_second = 0
+        self.player_bar_set_time(0)
+        self.bar_move_id = self.after(1000, self.player_bar_move)
+
     def play_midi(self):
         if self.current_midi_file and self.current_soundfont_file:
             if self.current_sf2.playing:
                 self.current_sf2.stop()
             if pygame.mixer.music.get_busy():
                 pygame.mixer.music.stop()
+
+            self.init_player_bar(self.current_midi_file)
+
             try:
                 if self.play_as_midi.get() == 0:
                     if load_sf2_mode == 1:
@@ -163,6 +208,9 @@ class Root(Tk):
             self.show(f'Pause playing')
             self.current_sf2.pause()
         pygame.mixer.music.pause()
+        if self.bar_move_id:
+            self.after_cancel(self.bar_move_id)
+            self.bar_move_id = None
 
     def unpause_midi(self):
         if self.paused:
@@ -170,6 +218,7 @@ class Root(Tk):
             self.show(f'Continue playing')
             self.current_sf2.unpause()
         pygame.mixer.music.unpause()
+        self.bar_move_id = self.after(1000, self.player_bar_move)
 
     def stop_midi(self):
         if self.current_sf2.playing:
@@ -178,6 +227,12 @@ class Root(Tk):
             self.current_sf2.stop()
         if pygame.mixer.music.get_busy():
             pygame.mixer.music.stop()
+        if self.bar_move_id:
+            self.after_cancel(self.bar_move_id)
+        self.bar_move_id = None
+        self.player_bar['value'] = 0
+        self.current_second = 0
+        self.player_bar_set_time(self.current_second)
 
     def export_audio(self):
         file_name = filedialog.asksaveasfile(initialdir=self.current_path,
@@ -231,6 +286,7 @@ class Root(Tk):
             current_midi_file.change_instruments(current_instruments)
             current_midi_file.clear_program_change()
             rs.mp.write(current_midi_file, name='temp.mid')
+            self.init_player_bar('temp.mid')
             try:
                 if self.play_as_midi.get() == 0:
                     if load_sf2_mode == 1:
@@ -256,6 +312,7 @@ class Root(Tk):
                     split_channels=self.split_channels.get()).modulation(
                         before_mode, after_mode)
                 rs.mp.write(modulation_piece, name='modulation.mid')
+                self.init_player_bar('modulation.mid')
             except:
                 self.show('Error: Invalid mode')
                 return
