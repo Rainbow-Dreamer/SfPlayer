@@ -8,6 +8,12 @@ class Root(Tk):
         super(Root, self).__init__()
         self.minsize(850, 600)
         self.title('SoundFont MIDI Player')
+        self.configure(bg='white')
+
+        style = ttk.Style()
+        style.configure('TLabel', background='white')
+        style.configure('TCheckbutton', background='white')
+
         self.choose_midi_button = ttk.Button(self,
                                              text='Choose MIDI File',
                                              command=self.choose_midi)
@@ -18,6 +24,9 @@ class Root(Tk):
         self.current_midi_file = None
         self.current_soundfont_file = None
         self.current_midi_file_read = None
+        self.current_midi_object = None
+        self.paused = False
+        self.current_path = '.'
         self.current_sf2 = rs.sf2_player()
         self.current_midi_label = ttk.Label(self, text='Not chosen')
         self.current_soundfont_label = ttk.Label(self, text='Not chosen')
@@ -47,8 +56,7 @@ class Root(Tk):
         self.stop_button.place(x=500, y=300)
         self.msg = ttk.Label(self, text='Currently no actions')
         self.msg.place(x=50, y=550)
-        self.paused = False
-        self.current_path = '.'
+
         self.custom_instrument_label = ttk.Label(self,
                                                  text='Custom Instruments')
         self.custom_instrument_label.place(x=50, y=400)
@@ -98,6 +106,8 @@ class Root(Tk):
         self.bar_move_id = None
         self.player_bar_time = ttk.Label(self, text='00:00:00 / 00:00:00')
         self.player_bar_time.place(x=670, y=230)
+        self.player_bar.bind('<Button-1>', self.player_bar_click)
+        self.player_bar.bind('<B1-Motion>', self.player_bar_click)
 
         try:
             self.choose_midi('resources/demo.mid')
@@ -108,15 +118,55 @@ class Root(Tk):
             pass
 
     def player_bar_move(self):
+        if self.current_sf2.get_status() == 3:
+            self.player_bar_reset()
+            return
         self.current_second += 1
-        self.player_bar['value'] = (self.current_second /
-                                    self.current_midi_length) * 100
-        self.bar_move_id = self.after(1000, self.player_bar_move)
-        self.player_bar_set_time(self.current_second)
+        if self.current_second >= self.current_midi_length:
+            self.current_second = self.current_midi_length
+            current_ratio = (self.current_second /
+                             self.current_midi_length) * 100
+            self.player_bar['value'] = current_ratio
+            self.player_bar_set_time(self.current_second)
+            self.after(1000, self.player_bar_reset)
+        else:
+            current_ratio = (self.current_second /
+                             self.current_midi_length) * 100
+            self.player_bar['value'] = current_ratio
+            self.player_bar_set_time(self.current_second)
+            self.bar_move_id = self.after(1000, self.player_bar_move)
 
     def player_bar_set_time(self, time):
         self.player_bar_time.configure(
             text=f'{self.second_to_time_label(time)} / {self.total_length}')
+
+    def player_bar_click(self, event):
+        if self.bar_move_id:
+            if self.current_sf2.get_status() == 3:
+                self.player_bar_reset()
+                return
+            current_ratio = event.x / 600
+            if current_ratio > 1:
+                current_ratio = 1
+            elif current_ratio < 0:
+                current_ratio = 0
+            new_time = self.current_midi_length * current_ratio
+            self.current_second = new_time
+            self.player_bar['value'] = current_ratio * 100
+            self.player_bar_set_time(self.current_second)
+            new_ticks = int(
+                mido.second2tick(self.current_second,
+                                 self.current_midi_object.ticks_per_beat,
+                                 self.current_sf2.get_current_tempo()))
+            self.current_sf2.set_pos(new_ticks)
+
+    def player_bar_reset(self):
+        if self.current_sf2.get_status() != 3:
+            return
+        self.bar_move_id = None
+        self.player_bar['value'] = 0
+        self.current_second = 0
+        self.player_bar_set_time(self.current_second)
 
     def show(self, text=''):
         self.msg.configure(text=text)
@@ -133,6 +183,7 @@ class Root(Tk):
             self.current_midi_file_read = None
             self.current_midi_label.configure(text=self.current_midi_file)
             self.current_path = os.path.dirname(self.current_midi_file)
+            self.current_midi_object = None
 
     def second_to_time_label(self, second):
         current_hour = int(second / 3600)
@@ -162,9 +213,11 @@ class Root(Tk):
                 self.show('Invalid SoundFont file')
 
     def init_player_bar(self, midi_file):
-        self.current_midi_object = mido.MidiFile(midi_file)
-        self.current_midi_length = self.current_midi_object.length
-        self.total_length = self.second_to_time_label(self.current_midi_length)
+        if self.current_midi_object is None:
+            self.current_midi_object = mido.MidiFile(midi_file)
+            self.current_midi_length = self.current_midi_object.length
+            self.total_length = self.second_to_time_label(
+                self.current_midi_length)
         if self.bar_move_id:
             self.after_cancel(self.bar_move_id)
         self.player_bar['value'] = 0
