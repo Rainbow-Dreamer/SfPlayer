@@ -162,6 +162,7 @@ class Root(Tk):
 
     def player_bar_reset(self):
         if self.current_sf2.get_status() != 3:
+            self.bar_move_id = self.after(1000, self.player_bar_move)
             return
         self.bar_move_id = None
         self.player_bar['value'] = 0
