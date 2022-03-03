@@ -65,8 +65,8 @@ class Root(TkinterDnD.Tk):
         self.playback_frame.dnd_bind('<<Drop>>', self.drag_files)
 
         self.notebook.add(self.playback_frame, text='Playback')
-        self.notebook.add(self.music_function_frame, text='Music Functions')
         self.notebook.add(self.synth_control_frame, text='Synth Settings')
+        self.notebook.add(self.music_function_frame, text='Music Functions')
 
     def init_choose_file_region(self):
         self.choose_midi_button = ttk.Button(self.playback_frame,
@@ -170,13 +170,10 @@ class Root(TkinterDnD.Tk):
     def init_synth_control_region(self):
         self.init_volume_bar()
         self.init_bpm_bar()
-        self.has_reverb = IntVar()
-        self.has_reverb.set(0)
-        self.reverb_button = ttk.Checkbutton(self.synth_control_frame,
-                                             text='Reverb',
-                                             variable=self.has_reverb,
-                                             command=self.change_reverb)
-        self.reverb_button.place(x=50, y=250)
+        self.init_reverb_button()
+        self.init_reverb_parameters_bar()
+        self.init_chorus_button()
+        self.init_chorus_parameters_bar()
 
     def init_volume_bar(self):
         self.volume_slider = StringVar()
@@ -184,7 +181,7 @@ class Root(TkinterDnD.Tk):
         self.volume_slider.set(f'Volume  {self.current_volume_percentage}%')
         self.volume_slider_label = ttk.Label(self.synth_control_frame,
                                              textvariable=self.volume_slider)
-        self.volume_slider_label.place(x=50, y=100)
+        self.volume_slider_label.place(x=50, y=50)
         self.set_move_volume_bar = ttk.Scale(
             self.synth_control_frame,
             from_=0,
@@ -194,7 +191,7 @@ class Root(TkinterDnD.Tk):
             value=self.current_volume_percentage,
             command=lambda e: self.change_move_volume_bar(e),
             takefocus=False)
-        self.set_move_volume_bar.place(x=200, y=100)
+        self.set_move_volume_bar.place(x=200, y=50)
 
     def init_bpm_bar(self):
         self.bpm_slider = StringVar()
@@ -202,7 +199,7 @@ class Root(TkinterDnD.Tk):
         self.bpm_slider.set(f'BPM  {self.current_bpm}')
         self.bpm_slider_label = ttk.Label(self.synth_control_frame,
                                           textvariable=self.bpm_slider)
-        self.bpm_slider_label.place(x=50, y=150)
+        self.bpm_slider_label.place(x=50, y=100)
         self.set_move_bpm_bar = ttk.Scale(
             self.synth_control_frame,
             from_=0,
@@ -212,7 +209,7 @@ class Root(TkinterDnD.Tk):
             value=self.current_bpm,
             command=lambda e: self.change_move_bpm_bar(e),
             takefocus=False)
-        self.set_move_bpm_bar.place(x=200, y=150)
+        self.set_move_bpm_bar.place(x=200, y=100)
 
     def change_move_volume_bar(self, e):
         self.current_volume_percentage = round(float(e) * 5) / 5
@@ -226,11 +223,177 @@ class Root(TkinterDnD.Tk):
         if hasattr(self.current_sf2.synth, 'player'):
             self.current_sf2.set_tempo(self.current_bpm)
 
+    def init_reverb_button(self):
+        self.has_reverb = IntVar()
+        self.has_reverb.set(0)
+        self.reverb_button = ttk.Checkbutton(self.synth_control_frame,
+                                             text='Reverb',
+                                             variable=self.has_reverb,
+                                             command=self.change_reverb,
+                                             takefocus=False)
+        self.reverb_button.place(x=50, y=150)
+
     def change_reverb(self):
         if self.has_reverb.get():
             self.change_setting('reverb.active', 1)
         else:
             self.change_setting('reverb.active', 0)
+
+    def init_reverb_parameters_bar(self):
+        self.reverb_sliders = [StringVar() for i in range(4)]
+        self.reverb_parameters = ['damp', 'level', 'room-size', 'width']
+        self.reverb_parameter_int = []
+        self.reverb_parameters_min_values = [0, 0, 0, 0]
+        self.reverb_parameters_max_values = [1, 1, 1, 100]
+        self.current_reverb_values = [
+            self.get_setting(f'reverb.{i}') for i in self.reverb_parameters
+        ]
+        for k, each in enumerate(self.reverb_sliders):
+            current_ratio = 100 / self.reverb_parameters_max_values[k]
+            if current_ratio == 1:
+                digit = 1
+            else:
+                digit = 2
+            if self.reverb_parameters[k] in self.reverb_parameter_int:
+                digit = 0
+            each.set(
+                f'Reverb {self.reverb_parameters[k].capitalize()}  {self.current_reverb_values[k]:.{digit}f}'
+            )
+        self.reverb_slider_labels = [
+            ttk.Label(self.synth_control_frame, textvariable=k)
+            for k in self.reverb_sliders
+        ]
+        self.reverb_slider_labels[0].place(x=50, y=200)
+        self.reverb_slider_labels[1].place(x=450, y=200)
+        self.reverb_slider_labels[2].place(x=50, y=250)
+        self.reverb_slider_labels[3].place(x=450, y=250)
+        self.set_move_reverb_bars = [
+            ttk.Scale(self.synth_control_frame,
+                      from_=self.reverb_parameters_min_values[k] *
+                      (100 / self.reverb_parameters_max_values[k]),
+                      to=100,
+                      orient=HORIZONTAL,
+                      length=200,
+                      value=self.current_reverb_values[k] *
+                      (100 / self.reverb_parameters_max_values[k]),
+                      command=lambda e, k=k: self.change_move_reverb_bar(e, k),
+                      takefocus=False)
+            for k in range(len(self.reverb_parameters))
+        ]
+        self.set_move_reverb_bars[0].place(x=200, y=200)
+        self.set_move_reverb_bars[1].place(x=600, y=200)
+        self.set_move_reverb_bars[2].place(x=200, y=250)
+        self.set_move_reverb_bars[3].place(x=600, y=250)
+
+    def change_move_reverb_bar(self, e, ind):
+        current_ratio = 100 / self.reverb_parameters_max_values[ind]
+        if current_ratio == 1:
+            digit = 1
+        else:
+            digit = 2
+        if self.reverb_parameters[ind] in self.reverb_parameter_int:
+            self.current_reverb_values[ind] = int(float(e) / current_ratio)
+            digit = 0
+        else:
+            self.current_reverb_values[ind] = round(
+                (round(float(e) * 2) / 2) / current_ratio, digit)
+        self.reverb_sliders[ind].set(
+            f'Reverb {self.reverb_parameters[ind].capitalize()}  {self.current_reverb_values[ind]:.{digit}f}'
+        )
+        self.change_setting(f'reverb.{self.reverb_parameters[ind]}',
+                            self.current_reverb_values[ind])
+
+    def init_chorus_button(self):
+        self.has_chorus = IntVar()
+        self.has_chorus.set(0)
+        self.chorus_button = ttk.Checkbutton(self.synth_control_frame,
+                                             text='Chorus',
+                                             variable=self.has_chorus,
+                                             command=self.change_chorus,
+                                             takefocus=False)
+        self.chorus_button.place(x=50, y=300)
+
+    def change_chorus(self):
+        if self.has_chorus.get():
+            self.change_setting('chorus.active', 1)
+        else:
+            self.change_setting('chorus.active', 0)
+
+    def init_chorus_parameters_bar(self):
+        self.chorus_sliders = [StringVar() for i in range(4)]
+        self.chorus_parameters = ['depth', 'level', 'nr', 'speed']
+        self.chorus_parameter_int = ['nr']
+        self.chorus_parameters_min_values = [0, 0, 0, 0.1]
+        self.chorus_parameters_max_values = [256, 10, 99, 5]
+        self.current_chorus_values = [
+            self.get_setting(f'chorus.{i}') for i in self.chorus_parameters
+        ]
+        for k, each in enumerate(self.chorus_sliders):
+            current_ratio = 100 / self.chorus_parameters_max_values[k]
+            if current_ratio == 1:
+                digit = 1
+            else:
+                digit = 2
+            if self.chorus_parameters[k] in self.chorus_parameter_int:
+                digit = 0
+            each.set(
+                f'Chorus {self.chorus_parameters[k].capitalize()}  {self.current_chorus_values[k]:.{digit}f}'
+            )
+        self.chorus_slider_labels = [
+            ttk.Label(self.synth_control_frame, textvariable=k)
+            for k in self.chorus_sliders
+        ]
+        self.chorus_slider_labels[0].place(x=50, y=350)
+        self.chorus_slider_labels[1].place(x=450, y=350)
+        self.chorus_slider_labels[2].place(x=50, y=400)
+        self.chorus_slider_labels[3].place(x=450, y=400)
+        self.set_move_chorus_bars = [
+            ttk.Scale(self.synth_control_frame,
+                      from_=self.chorus_parameters_min_values[k] *
+                      (100 / self.chorus_parameters_max_values[k]),
+                      to=100,
+                      orient=HORIZONTAL,
+                      length=200,
+                      value=self.current_chorus_values[k] *
+                      (100 / self.chorus_parameters_max_values[k]),
+                      command=lambda e, k=k: self.change_move_chorus_bar(e, k),
+                      takefocus=False)
+            for k in range(len(self.chorus_parameters))
+        ]
+        self.set_move_chorus_bars[0].place(x=200, y=350)
+        self.set_move_chorus_bars[1].place(x=600, y=350)
+        self.set_move_chorus_bars[2].place(x=200, y=400)
+        self.set_move_chorus_bars[3].place(x=600, y=400)
+
+    def change_move_chorus_bar(self, e, ind):
+        current_ratio = 100 / self.chorus_parameters_max_values[ind]
+        if current_ratio == 1:
+            digit = 1
+        else:
+            digit = 2
+        if self.chorus_parameters[ind] in self.chorus_parameter_int:
+            self.current_chorus_values[ind] = int(float(e) / current_ratio)
+            digit = 0
+        else:
+            self.current_chorus_values[ind] = round(
+                (round(float(e) * 2) / 2) / current_ratio, digit)
+
+        self.chorus_sliders[ind].set(
+            f'Chorus {self.chorus_parameters[ind].capitalize()}  {self.current_chorus_values[ind]:.{digit}f}'
+        )
+        self.change_setting(f'chorus.{self.chorus_parameters[ind]}',
+                            self.current_chorus_values[ind])
+
+    def apply_synth_settings(self):
+        self.change_setting('gain', self.synth_volume)
+        self.change_setting('reverb.active', self.has_reverb.get())
+        for i, each in enumerate(self.reverb_parameters):
+            self.change_setting(f'reverb.{each}',
+                                self.current_reverb_values[i])
+        self.change_setting('chorus.active', self.has_chorus.get())
+        for i, each in enumerate(self.chorus_parameters):
+            self.change_setting(f'chorus.{each}',
+                                self.current_chorus_values[i])
 
     def drag_files(self, e):
         current_file = e.data[1:-1]
@@ -371,11 +534,9 @@ class Root(TkinterDnD.Tk):
                 if load_sf2_mode == 1:
                     self.current_sf2 = rs.sf2_player(
                         self.current_soundfont_file)
-                    self.change_setting('gain', self.synth_volume)
+                    self.apply_synth_settings()
                 self.current_sf2.play_midi_file(self.current_midi_file)
             except Exception as OSError:
-                import traceback
-                print(traceback.format_exc())
                 self.show(
                     'Error: The loaded SoundFont file does not contain all the required banks or presets of the MIDI file'
                 )
@@ -471,7 +632,7 @@ class Root(TkinterDnD.Tk):
                 if load_sf2_mode == 1:
                     self.current_sf2 = rs.sf2_player(
                         self.current_soundfont_file)
-                    self.change_setting('gain', self.synth_volume)
+                    self.apply_synth_settings()
                 self.current_sf2.play_midi_file('temp.mid')
             except Exception as OSError:
                 self.show(
@@ -502,7 +663,7 @@ class Root(TkinterDnD.Tk):
                 if load_sf2_mode == 1:
                     self.current_sf2 = rs.sf2_player(
                         self.current_soundfont_file)
-                    self.change_setting('gain', self.synth_volume)
+                    self.apply_synth_settings()
                 self.current_sf2.play_midi_file('modulation.mid')
             except Exception as OSError:
                 self.show(
