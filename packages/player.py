@@ -182,9 +182,9 @@ class Root(TkinterDnD.Tk):
         self.volume_slider = StringVar()
         self.current_volume_percentage = self.get_setting('gain') * 10
         self.volume_slider.set(f'Volume  {self.current_volume_percentage}%')
-        self.slider_label = ttk.Label(self.synth_control_frame,
-                                      textvariable=self.volume_slider)
-        self.slider_label.place(x=50, y=100)
+        self.volume_slider_label = ttk.Label(self.synth_control_frame,
+                                             textvariable=self.volume_slider)
+        self.volume_slider_label.place(x=50, y=100)
         self.set_move_volume_bar = ttk.Scale(
             self.synth_control_frame,
             from_=0,
@@ -192,16 +192,17 @@ class Root(TkinterDnD.Tk):
             orient=HORIZONTAL,
             length=500,
             value=self.current_volume_percentage,
-            command=lambda e: self.change_move_volume_bar(e))
+            command=lambda e: self.change_move_volume_bar(e),
+            takefocus=False)
         self.set_move_volume_bar.place(x=200, y=100)
 
     def init_bpm_bar(self):
         self.bpm_slider = StringVar()
         self.current_bpm = 120
         self.bpm_slider.set(f'BPM  {self.current_bpm}')
-        self.slider_label = ttk.Label(self.synth_control_frame,
-                                      textvariable=self.bpm_slider)
-        self.slider_label.place(x=50, y=150)
+        self.bpm_slider_label = ttk.Label(self.synth_control_frame,
+                                          textvariable=self.bpm_slider)
+        self.bpm_slider_label.place(x=50, y=150)
         self.set_move_bpm_bar = ttk.Scale(
             self.synth_control_frame,
             from_=0,
@@ -209,7 +210,8 @@ class Root(TkinterDnD.Tk):
             orient=HORIZONTAL,
             length=500,
             value=self.current_bpm,
-            command=lambda e: self.change_move_bpm_bar(e))
+            command=lambda e: self.change_move_bpm_bar(e),
+            takefocus=False)
         self.set_move_bpm_bar.place(x=200, y=150)
 
     def change_move_volume_bar(self, e):
