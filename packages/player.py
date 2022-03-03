@@ -12,7 +12,7 @@ class Root(TkinterDnD.Tk):
         self.init_playback_control_region()
         self.init_music_function_region()
         self.init_message_region()
-        self.init_volume_bar()
+        self.init_synth_control_region()
         try:
             self.choose_midi('resources/demo.mid')
             self.choose_soundfont('resources/gm.sf2')
@@ -38,136 +38,191 @@ class Root(TkinterDnD.Tk):
         self.minsize(850, 600)
         self.title('SfPlayer')
         self.configure(bg='white')
-        self.drop_target_register(DND_FILES)
-        self.dnd_bind('<<Drop>>', self.drag_files)
 
         style = ttk.Style()
         style.configure('TLabel', background='white')
         style.configure('TCheckbutton', background='white')
         style.configure('TScale', background='white')
+        style.configure('TFrame', background='white')
+        style.configure('Custom.TNotebook.Tab', padding=[20, 4])
+
+        self.notebook = ttk.Notebook(self,
+                                     height=600,
+                                     width=850,
+                                     style='Custom.TNotebook')
+        self.notebook.place(x=0, y=0)
+
+        self.playback_frame = ttk.Frame(self, height=600, width=850)
+        self.playback_frame.place(x=0, y=0)
+
+        self.music_function_frame = ttk.Frame(self, height=600, width=850)
+        self.music_function_frame.place(x=0, y=0)
+
+        self.synth_control_frame = ttk.Frame(self, height=600, width=850)
+        self.synth_control_frame.place(x=0, y=0)
+
+        self.playback_frame.drop_target_register(DND_FILES)
+        self.playback_frame.dnd_bind('<<Drop>>', self.drag_files)
+
+        self.notebook.add(self.playback_frame, text='Playback')
+        self.notebook.add(self.music_function_frame, text='Music Functions')
+        self.notebook.add(self.synth_control_frame, text='Synth Settings')
 
     def init_choose_file_region(self):
-        self.choose_midi_button = ttk.Button(self,
+        self.choose_midi_button = ttk.Button(self.playback_frame,
                                              text='Choose MIDI File',
                                              command=self.choose_midi)
         self.choose_midi_button.place(x=50, y=50)
         self.choose_soundfont_button = ttk.Button(
-            self, text='Choose SoundFont File', command=self.choose_soundfont)
-        self.choose_soundfont_button.place(x=50, y=110)
-        self.current_midi_label = ttk.Label(self, text='Not chosen')
-        self.current_soundfont_label = ttk.Label(self, text='Not chosen')
+            self.playback_frame,
+            text='Choose SoundFont File',
+            command=self.choose_soundfont)
+        self.choose_soundfont_button.place(x=50, y=120)
+        self.current_midi_label = ttk.Label(self.playback_frame,
+                                            text='Not chosen')
+        self.current_soundfont_label = ttk.Label(self.playback_frame,
+                                                 text='Not chosen')
         self.current_midi_label.place(x=220, y=52)
-        self.current_soundfont_label.place(x=220, y=112)
+        self.current_soundfont_label.place(x=220, y=122)
 
     def init_playback_control_region(self):
-        self.play_button = ttk.Button(self,
+        self.play_button = ttk.Button(self.playback_frame,
                                       text='Play',
                                       command=self.play_midi)
         self.play_button.place(x=50, y=300)
-        self.pause_button = ttk.Button(self,
+        self.pause_button = ttk.Button(self.playback_frame,
                                        text='Pause',
                                        command=self.pause_midi)
         self.pause_button.place(x=200, y=300)
-        self.unpause_button = ttk.Button(self,
+        self.unpause_button = ttk.Button(self.playback_frame,
                                          text='Unpause',
                                          command=self.unpause_midi)
         self.unpause_button.place(x=350, y=300)
-        self.stop_button = ttk.Button(self,
+        self.stop_button = ttk.Button(self.playback_frame,
                                       text='Stop',
                                       command=self.stop_midi)
         self.stop_button.place(x=500, y=300)
-        self.player_bar = ttk.Progressbar(self,
+        self.player_bar = ttk.Progressbar(self.playback_frame,
                                           orient=HORIZONTAL,
                                           length=600,
                                           mode='determinate')
         self.player_bar.place(x=50, y=230)
 
-        self.player_bar_time = ttk.Label(self, text='00:00:00 / 00:00:00')
+        self.player_bar_time = ttk.Label(self.playback_frame,
+                                         text='00:00:00 / 00:00:00')
         self.player_bar_time.place(x=670, y=230)
         self.player_bar.bind('<Button-1>', self.player_bar_click)
         self.player_bar.bind('<B1-Motion>', self.player_bar_click)
 
-    def init_music_function_region(self):
-        self.detect_key_button = ttk.Button(self,
-                                            text='Detect Key',
-                                            command=self.detect_key)
-        self.detect_key_button.place(x=50, y=170)
-        self.detect_key_label = ttk.Label(self, text='')
-        self.detect_key_label.place(x=180, y=170)
-
-        self.custom_instrument_label = ttk.Label(self,
-                                                 text='Custom Instruments')
-        self.custom_instrument_label.place(x=50, y=400)
-        self.custom_instrument_text = ttk.Entry(self, width=40)
-        self.custom_instrument_text.place(x=50, y=430)
-        self.custom_play_button = ttk.Button(self,
-                                             text='Custom Play',
-                                             command=self.custom_play)
-        self.custom_play_button.place(x=230, y=390)
-
         self.split_channels = IntVar()
         self.split_channels.set(0)
         self.split_channels_button = ttk.Checkbutton(
-            self, text='Split Channels', variable=self.split_channels)
-        self.split_channels_button.place(x=500, y=400)
-        self.export_audio_button = ttk.Button(self,
+            self.playback_frame,
+            text='Split Channels',
+            variable=self.split_channels)
+        self.split_channels_button.place(x=50, y=370)
+
+    def init_music_function_region(self):
+        self.detect_key_button = ttk.Button(self.music_function_frame,
+                                            text='Detect Key',
+                                            command=self.detect_key)
+        self.detect_key_button.place(x=50, y=50)
+        self.detect_key_label = ttk.Label(self.music_function_frame, text='')
+        self.detect_key_label.place(x=180, y=50)
+
+        self.custom_instrument_label = ttk.Label(self.music_function_frame,
+                                                 text='Custom Instruments')
+        self.custom_instrument_label.place(x=50, y=200)
+        self.custom_instrument_text = ttk.Entry(self.music_function_frame,
+                                                width=40)
+        self.custom_instrument_text.place(x=50, y=230)
+        self.custom_play_button = ttk.Button(self.music_function_frame,
+                                             text='Custom Play',
+                                             command=self.custom_play)
+        self.custom_play_button.place(x=230, y=190)
+
+        self.export_audio_button = ttk.Button(self.music_function_frame,
                                               text='Export As Audio',
                                               command=self.export_audio)
-        self.export_audio_button.place(x=650, y=300)
+        self.export_audio_button.place(x=50, y=120)
 
-        self.modulation_before_label = ttk.Label(self, text='From Mode')
-        self.modulation_before_label.place(x=50, y=500)
-        self.modulation_before_entry = ttk.Entry(self, width=20)
-        self.modulation_before_entry.place(x=150, y=500)
-        self.modulation_after_label = ttk.Label(self, text='to Mode')
-        self.modulation_after_label.place(x=320, y=500)
-        self.modulation_after_entry = ttk.Entry(self, width=20)
-        self.modulation_after_entry.place(x=400, y=500)
-        self.modulation_play_button = ttk.Button(self,
+        self.modulation_before_label = ttk.Label(self.music_function_frame,
+                                                 text='From Mode')
+        self.modulation_before_label.place(x=50, y=300)
+        self.modulation_before_entry = ttk.Entry(self.music_function_frame,
+                                                 width=20)
+        self.modulation_before_entry.place(x=150, y=300)
+        self.modulation_after_label = ttk.Label(self.music_function_frame,
+                                                text='to Mode')
+        self.modulation_after_label.place(x=320, y=300)
+        self.modulation_after_entry = ttk.Entry(self.music_function_frame,
+                                                width=20)
+        self.modulation_after_entry.place(x=400, y=300)
+        self.modulation_play_button = ttk.Button(self.music_function_frame,
                                                  text='Play Modulation',
                                                  command=self.play_modulation)
-        self.modulation_play_button.place(x=580, y=495)
-
-        self.play_as_midi = IntVar()
-        self.play_as_midi.set(0)
-        self.play_as_midi_button = ttk.Checkbutton(self,
-                                                   text='Play as MIDI',
-                                                   variable=self.play_as_midi)
-        self.play_as_midi_button.place(x=650, y=400)
-
-        self.has_reverb = IntVar()
-        self.has_reverb.set(0)
-        self.reverb_button = ttk.Checkbutton(self,
-                                             text='Reverb',
-                                             variable=self.has_reverb,
-                                             command=self.change_reverb)
-        self.reverb_button.place(x=500, y=350)
+        self.modulation_play_button.place(x=580, y=295)
 
     def init_message_region(self):
         self.msg = ttk.Label(self, text='Currently no actions')
         self.msg.place(x=50, y=550)
 
+    def init_synth_control_region(self):
+        self.init_volume_bar()
+        self.init_bpm_bar()
+        self.has_reverb = IntVar()
+        self.has_reverb.set(0)
+        self.reverb_button = ttk.Checkbutton(self.synth_control_frame,
+                                             text='Reverb',
+                                             variable=self.has_reverb,
+                                             command=self.change_reverb)
+        self.reverb_button.place(x=50, y=250)
+
     def init_volume_bar(self):
-        self.slider = StringVar()
+        self.volume_slider = StringVar()
         self.current_volume_percentage = self.get_setting('gain') * 10
-        self.slider.set(f'Volume: {self.current_volume_percentage}%')
-        self.slider_label = ttk.Label(self, textvariable=self.slider)
-        self.slider_label.place(x=50, y=350)
+        self.volume_slider.set(f'Volume  {self.current_volume_percentage}%')
+        self.slider_label = ttk.Label(self.synth_control_frame,
+                                      textvariable=self.volume_slider)
+        self.slider_label.place(x=50, y=100)
         self.set_move_volume_bar = ttk.Scale(
-            self,
+            self.synth_control_frame,
             from_=0,
             to=100,
             orient=HORIZONTAL,
-            length=200,
+            length=500,
             value=self.current_volume_percentage,
             command=lambda e: self.change_move_volume_bar(e))
-        self.set_move_volume_bar.place(x=150, y=350)
+        self.set_move_volume_bar.place(x=200, y=100)
+
+    def init_bpm_bar(self):
+        self.bpm_slider = StringVar()
+        self.current_bpm = 120
+        self.bpm_slider.set(f'BPM  {self.current_bpm}')
+        self.slider_label = ttk.Label(self.synth_control_frame,
+                                      textvariable=self.bpm_slider)
+        self.slider_label.place(x=50, y=150)
+        self.set_move_bpm_bar = ttk.Scale(
+            self.synth_control_frame,
+            from_=0,
+            to=1000,
+            orient=HORIZONTAL,
+            length=500,
+            value=self.current_bpm,
+            command=lambda e: self.change_move_bpm_bar(e))
+        self.set_move_bpm_bar.place(x=200, y=150)
 
     def change_move_volume_bar(self, e):
-        self.current_volume_percentage = round(float(e) * 2) / 2
-        self.slider.set(f'Volume: {self.current_volume_percentage}%')
+        self.current_volume_percentage = round(float(e) * 5) / 5
+        self.volume_slider.set(f'Volume  {self.current_volume_percentage}%')
         self.change_setting('gain', self.current_volume_percentage / 10)
         self.synth_volume = self.current_volume_percentage / 10
+
+    def change_move_bpm_bar(self, e):
+        self.current_bpm = int(float(e))
+        self.bpm_slider.set(f'BPM  {self.current_bpm}')
+        if hasattr(self.current_sf2.synth, 'player'):
+            self.current_sf2.set_tempo(self.current_bpm)
 
     def change_reverb(self):
         if self.has_reverb.get():
@@ -311,18 +366,11 @@ class Root(TkinterDnD.Tk):
             self.init_player_bar(self.current_midi_file)
 
             try:
-                if self.play_as_midi.get() == 0:
-                    if load_sf2_mode == 1:
-                        self.current_sf2 = rs.sf2_player(
-                            self.current_soundfont_file)
-                        self.change_setting('gain', self.synth_volume)
-                    self.current_sf2.play_midi_file(self.current_midi_file)
-                else:
-                    if not self.current_midi_file_read:
-                        self.current_midi_file_read = rs.mp.read(
-                            self.current_midi_file,
-                            split_channels=self.split_channels.get())
-                    rs.mp.play(self.current_midi_file_read)
+                if load_sf2_mode == 1:
+                    self.current_sf2 = rs.sf2_player(
+                        self.current_soundfont_file)
+                    self.change_setting('gain', self.synth_volume)
+                self.current_sf2.play_midi_file(self.current_midi_file)
             except Exception as OSError:
                 import traceback
                 print(traceback.format_exc())
@@ -418,14 +466,11 @@ class Root(TkinterDnD.Tk):
             rs.mp.write(current_midi_file, name='temp.mid')
             self.init_player_bar('temp.mid')
             try:
-                if self.play_as_midi.get() == 0:
-                    if load_sf2_mode == 1:
-                        self.current_sf2 = rs.sf2_player(
-                            self.current_soundfont_file)
-                        self.change_setting('gain', self.synth_volume)
-                    self.current_sf2.play_midi_file('temp.mid')
-                else:
-                    rs.mp.play(current_midi_file)
+                if load_sf2_mode == 1:
+                    self.current_sf2 = rs.sf2_player(
+                        self.current_soundfont_file)
+                    self.change_setting('gain', self.synth_volume)
+                self.current_sf2.play_midi_file('temp.mid')
             except Exception as OSError:
                 self.show(
                     'Error: The loaded SoundFont file does not contain all the required banks or presets of the MIDI file'
@@ -452,14 +497,11 @@ class Root(TkinterDnD.Tk):
                     self.current_sf2.stop()
                 if pygame.mixer.music.get_busy():
                     pygame.mixer.music.stop()
-                if self.play_as_midi.get() == 0:
-                    if load_sf2_mode == 1:
-                        self.current_sf2 = rs.sf2_player(
-                            self.current_soundfont_file)
-                        self.change_setting('gain', self.synth_volume)
-                    self.current_sf2.play_midi_file('modulation.mid')
-                else:
-                    rs.mp.play(modulation_piece)
+                if load_sf2_mode == 1:
+                    self.current_sf2 = rs.sf2_player(
+                        self.current_soundfont_file)
+                    self.change_setting('gain', self.synth_volume)
+                self.current_sf2.play_midi_file('modulation.mid')
             except Exception as OSError:
                 self.show(
                     'Error: The loaded SoundFont file does not contain all the required banks or presets of the MIDI file'
