@@ -119,7 +119,8 @@ class Root(TkinterDnD.Tk):
         self.split_channels_button = ttk.Checkbutton(
             self.playback_frame,
             text='Split Channels',
-            variable=self.split_channels)
+            variable=self.split_channels,
+            takefocus=False)
         self.split_channels_button.place(x=50, y=370)
 
     def init_music_function_region(self):
