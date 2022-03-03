@@ -6,6 +6,7 @@ class Root(TkinterDnD.Tk):
 
     def __init__(self):
         super(Root, self).__init__()
+        self.init_parameters()
         self.minsize(850, 600)
         self.title('SfPlayer')
         self.configure(bg='white')
@@ -23,13 +24,6 @@ class Root(TkinterDnD.Tk):
         self.choose_soundfont_button = ttk.Button(
             self, text='Choose SoundFont File', command=self.choose_soundfont)
         self.choose_soundfont_button.place(x=50, y=110)
-        self.current_midi_file = None
-        self.current_soundfont_file = None
-        self.current_midi_file_read = None
-        self.current_midi_object = None
-        self.paused = False
-        self.current_path = '.'
-        self.current_sf2 = rs.sf2_player()
         self.current_midi_label = ttk.Label(self, text='Not chosen')
         self.current_soundfont_label = ttk.Label(self, text='Not chosen')
         self.current_midi_label.place(x=220, y=52)
@@ -104,8 +98,7 @@ class Root(TkinterDnD.Tk):
                                           length=600,
                                           mode='determinate')
         self.player_bar.place(x=50, y=230)
-        self.current_second = 0
-        self.bar_move_id = None
+
         self.player_bar_time = ttk.Label(self, text='00:00:00 / 00:00:00')
         self.player_bar_time.place(x=670, y=230)
         self.player_bar.bind('<Button-1>', self.player_bar_click)
@@ -115,9 +108,19 @@ class Root(TkinterDnD.Tk):
             self.choose_midi('resources/demo.mid')
             self.choose_soundfont('resources/gm.sf2')
         except:
-            import traceback
-            print(traceback.format_exc())
             pass
+
+    def init_parameters(self):
+        self.current_midi_file = None
+        self.current_soundfont_file = None
+        self.current_midi_file_read = None
+        self.current_midi_object = None
+        self.paused = False
+        self.already_load = False
+        self.current_path = '.'
+        self.current_sf2 = rs.sf2_player()
+        self.current_second = 0
+        self.bar_move_id = None
 
     def drag_files(self, e):
         current_file = e.data[1:-1]
@@ -195,7 +198,7 @@ class Root(TkinterDnD.Tk):
             self.current_midi_file_read = None
             self.current_midi_label.configure(text=self.current_midi_file)
             self.current_path = os.path.dirname(self.current_midi_file)
-            self.current_midi_object = None
+            self.already_load = False
 
     def second_to_time_label(self, second):
         current_hour = int(second / 3600)
@@ -225,7 +228,7 @@ class Root(TkinterDnD.Tk):
                 self.show('Invalid SoundFont file')
 
     def init_player_bar(self, midi_file):
-        if self.current_midi_object is None:
+        if (self.current_midi_object is None) or (not self.already_load):
             try:
                 self.current_midi_object = mido.MidiFile(midi_file, clip=True)
             except IOError:
@@ -237,6 +240,7 @@ class Root(TkinterDnD.Tk):
             self.current_midi_length = self.current_midi_object.length
             self.total_length = self.second_to_time_label(
                 self.current_midi_length)
+            self.already_load = True
         if self.bar_move_id:
             self.after_cancel(self.bar_move_id)
         self.player_bar['value'] = 0
