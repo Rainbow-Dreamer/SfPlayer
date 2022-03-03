@@ -35,7 +35,7 @@ class Root(TkinterDnD.Tk):
         self.bar_move_id = None
 
     def init_main_window(self):
-        self.minsize(850, 600)
+        self.minsize(850, 520)
         self.title('SfPlayer')
         self.configure(bg='white')
 
@@ -165,7 +165,7 @@ class Root(TkinterDnD.Tk):
 
     def init_message_region(self):
         self.msg = ttk.Label(self, text='Currently no actions')
-        self.msg.place(x=50, y=550)
+        self.msg.place(x=50, y=470)
 
     def init_synth_control_region(self):
         self.init_volume_bar()
