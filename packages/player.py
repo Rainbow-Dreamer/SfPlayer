@@ -33,6 +33,8 @@ class Root(TkinterDnD.Tk):
         self.change_setting('cpu-cores', cpu_cores)
         self.current_second = 0
         self.bar_move_id = None
+        self.change_bpm_id = None
+        self.bpm_outer_change = False
 
     def init_main_window(self):
         self.minsize(850, 520)
@@ -129,18 +131,54 @@ class Root(TkinterDnD.Tk):
                                             command=self.detect_key)
         self.detect_key_button.place(x=50, y=50)
         self.detect_key_label = ttk.Label(self.music_function_frame, text='')
-        self.detect_key_label.place(x=180, y=50)
+        self.detect_key_label.place(x=160, y=50)
 
-        self.custom_instrument_label = ttk.Label(self.music_function_frame,
-                                                 text='Custom Instruments')
-        self.custom_instrument_label.place(x=50, y=200)
-        self.custom_instrument_text = ttk.Entry(self.music_function_frame,
-                                                width=40)
-        self.custom_instrument_text.place(x=50, y=230)
-        self.custom_play_button = ttk.Button(self.music_function_frame,
-                                             text='Custom Play',
-                                             command=self.custom_play)
-        self.custom_play_button.place(x=230, y=190)
+        self.channel_label = ttk.Label(self.music_function_frame,
+                                       text='Channel')
+        self.channel_label.place(x=500, y=60)
+        self.instrument_label = ttk.Label(self.music_function_frame,
+                                          text='Instrument')
+        self.instrument_label.place(x=630, y=60)
+        self.custom_play_listbox = Listbox(self.music_function_frame,
+                                           exportselection=False,
+                                           activestyle='none')
+        self.instrument_listbox = Listbox(self.music_function_frame,
+                                          exportselection=False,
+                                          activestyle='none',
+                                          state=DISABLED,
+                                          disabledforeground='black')
+        for k in range(16):
+            self.custom_play_listbox.insert(END, f'Channel {k+1}')
+        self.custom_play_listbox.place(x=500, y=90, width=100, height=300)
+        self.custom_play_listbox.bind('<<ListboxSelect>>',
+                                      self.show_current_program_and_bank)
+        self.whole_instruments = list(rs.mp.instruments.keys())
+        self.whole_instruments_with_number = [
+            f'{i+1}  {each}' for i, each in enumerate(self.whole_instruments)
+        ]
+        self.instrument_listbox.place(x=630, y=90, width=150, height=300)
+        self.program_text = StringVar()
+        self.program_text.set(self.whole_instruments_with_number[0])
+        self.program_box = ttk.Combobox(
+            self.music_function_frame,
+            width=25,
+            textvariable=self.program_text,
+            values=self.whole_instruments_with_number)
+        self.program_box.place(x=500, y=410)
+        self.bank_text = IntVar()
+        self.bank_text.set(0)
+        self.bank_box = ttk.Combobox(self.music_function_frame,
+                                     width=10,
+                                     textvariable=self.bank_text,
+                                     values=[i for i in range(128)])
+        self.bank_box.place(x=715, y=410)
+        self.program_label = ttk.Label(self.music_function_frame,
+                                       text='Program')
+        self.bank_label = ttk.Label(self.music_function_frame, text='Bank')
+        self.program_label.place(x=500, y=440)
+        self.bank_label.place(x=715, y=440)
+        self.program_box.bind('<<ComboboxSelected>>', self.change_program)
+        self.bank_box.bind('<<ComboboxSelected>>', self.change_bank)
 
         self.export_audio_button = ttk.Button(self.music_function_frame,
                                               text='Export As Audio',
@@ -155,18 +193,18 @@ class Root(TkinterDnD.Tk):
         self.modulation_before_entry.place(x=150, y=300)
         self.modulation_after_label = ttk.Label(self.music_function_frame,
                                                 text='to Mode')
-        self.modulation_after_label.place(x=320, y=300)
+        self.modulation_after_label.place(x=50, y=350)
         self.modulation_after_entry = ttk.Entry(self.music_function_frame,
                                                 width=20)
-        self.modulation_after_entry.place(x=400, y=300)
+        self.modulation_after_entry.place(x=150, y=350)
         self.modulation_play_button = ttk.Button(self.music_function_frame,
                                                  text='Play Modulation',
                                                  command=self.play_modulation)
-        self.modulation_play_button.place(x=580, y=295)
+        self.modulation_play_button.place(x=50, y=400)
 
     def init_message_region(self):
         self.msg = ttk.Label(self, text='Currently no actions')
-        self.msg.place(x=50, y=470)
+        self.msg.place(x=50, y=480)
 
     def init_synth_control_region(self):
         self.init_volume_bar()
@@ -222,7 +260,10 @@ class Root(TkinterDnD.Tk):
         self.current_bpm = int(float(e))
         self.bpm_slider.set(f'BPM  {self.current_bpm}')
         if hasattr(self.current_sf2.synth, 'player'):
-            self.current_sf2.set_tempo(self.current_bpm)
+            if self.bpm_outer_change:
+                self.bpm_outer_change = False
+            else:
+                self.current_sf2.set_tempo(self.current_bpm)
 
     def init_reverb_button(self):
         self.has_reverb = IntVar()
@@ -396,6 +437,31 @@ class Root(TkinterDnD.Tk):
             self.change_setting(f'chorus.{each}',
                                 self.current_chorus_values[i])
 
+    def change_program(self, e):
+        current_ind = self.custom_play_listbox.index(ANCHOR)
+        current_instrument = self.program_text.get()
+        self.current_sf2.synth.program_change(
+            current_ind,
+            self.whole_instruments_with_number.index(current_instrument))
+
+    def change_bank(self, e):
+        current_ind = self.custom_play_listbox.index(ANCHOR)
+        current_bank = self.bank_text.get()
+        self.current_sf2.synth.bank_select(current_ind, current_bank)
+        current_instrument = self.program_text.get()
+        self.current_sf2.synth.program_change(
+            current_ind,
+            self.whole_instruments_with_number.index(current_instrument))
+
+    def show_current_program_and_bank(self, e):
+        current_ind = self.custom_play_listbox.index(ANCHOR)
+        current_sfid, current_bank, current_program = self.current_sf2.synth.program_info(
+            current_ind)
+        if current_sfid != 0:
+            self.program_box.set(
+                self.whole_instruments_with_number[current_program])
+            self.bank_box.set(current_bank)
+
     def drag_files(self, e):
         current_file = e.data[1:-1]
         if os.path.isfile(current_file):
@@ -517,10 +583,37 @@ class Root(TkinterDnD.Tk):
             self.already_load = True
         if self.bar_move_id:
             self.after_cancel(self.bar_move_id)
+            self.after_cancel(self.change_bpm_id)
+            self.after_cancel(self.change_instrument_id)
         self.player_bar['value'] = 0
         self.current_second = 0
         self.player_bar_set_time(0)
         self.bar_move_id = self.after(1000, self.player_bar_move)
+
+    def init_after_play(self):
+        self.update_bpm()
+        self.update_instrument()
+
+    def update_bpm(self):
+        self.current_bpm = self.current_sf2.get_current_bpm()
+        self.bpm_slider.set(f'BPM  {self.current_bpm}')
+        self.bpm_outer_change = True
+        self.set_move_bpm_bar.set(self.current_bpm)
+        self.change_bpm_id = self.after(100, self.update_bpm)
+
+    def update_instrument(self):
+        self.instrument_listbox.configure(state=NORMAL)
+        self.instrument_listbox.delete(0, END)
+        for k in range(16):
+            if self.current_sf2.synth.program_info(k)[0] != 0:
+                current_instrument = self.current_sf2.synth.channel_info(k)[3]
+                if not current_instrument:
+                    current_instrument = 'None'
+            else:
+                current_instrument = 'None'
+            self.instrument_listbox.insert(END, current_instrument)
+        self.instrument_listbox.configure(state=DISABLED)
+        self.change_instrument_id = self.after(100, self.update_instrument)
 
     def play_midi(self):
         if self.current_midi_file and self.current_soundfont_file:
@@ -537,7 +630,10 @@ class Root(TkinterDnD.Tk):
                         self.current_soundfont_file)
                     self.apply_synth_settings()
                 self.current_sf2.play_midi_file(self.current_midi_file)
+                self.init_after_play()
             except Exception as OSError:
+                import traceback
+                print(traceback.format_exc())
                 self.show(
                     'Error: The loaded SoundFont file does not contain all the required banks or presets of the MIDI file'
                 )
@@ -552,6 +648,8 @@ class Root(TkinterDnD.Tk):
         pygame.mixer.music.pause()
         if self.bar_move_id:
             self.after_cancel(self.bar_move_id)
+            self.after_cancel(self.change_bpm_id)
+            self.after_cancel(self.change_instrument_id)
             self.bar_move_id = None
 
     def unpause_midi(self):
@@ -571,6 +669,8 @@ class Root(TkinterDnD.Tk):
             pygame.mixer.music.stop()
         if self.bar_move_id:
             self.after_cancel(self.bar_move_id)
+            self.after_cancel(self.change_bpm_id)
+            self.after_cancel(self.change_instrument_id)
         self.bar_move_id = None
         self.player_bar['value'] = 0
         self.current_second = 0
@@ -605,43 +705,6 @@ class Root(TkinterDnD.Tk):
             return
         self.show(f'Finish exporting {file_name}')
 
-    def custom_play(self):
-        if self.current_midi_file and self.current_soundfont_file:
-
-            if self.current_sf2.playing:
-                self.current_sf2.stop()
-            if pygame.mixer.music.get_busy():
-                pygame.mixer.music.stop()
-
-            current_midi_file = rs.mp.read(
-                self.current_midi_file,
-                split_channels=self.split_channels.get())
-            try:
-                current_instruments = literal_eval(
-                    f'[{self.custom_instrument_text.get()}]')
-            except:
-                self.show('invalid instruments')
-                return
-            if len(current_instruments) < len(current_midi_file):
-                current_instruments += current_midi_file.instruments_numbers[
-                    len(current_instruments):]
-            current_midi_file.change_instruments(current_instruments)
-            current_midi_file.clear_program_change()
-            rs.mp.write(current_midi_file, name='temp.mid')
-            self.init_player_bar('temp.mid')
-            try:
-                if load_sf2_mode == 1:
-                    self.current_sf2 = rs.sf2_player(
-                        self.current_soundfont_file)
-                    self.apply_synth_settings()
-                self.current_sf2.play_midi_file('temp.mid')
-            except Exception as OSError:
-                self.show(
-                    'Error: The loaded SoundFont file does not contain all the required banks or presets of the MIDI file'
-                )
-                return
-            self.show(f'Start playing')
-
     def play_modulation(self):
         if self.current_midi_file and self.current_soundfont_file:
             try:
@@ -666,6 +729,7 @@ class Root(TkinterDnD.Tk):
                         self.current_soundfont_file)
                     self.apply_synth_settings()
                 self.current_sf2.play_midi_file('modulation.mid')
+                self.init_after_play()
             except Exception as OSError:
                 self.show(
                     'Error: The loaded SoundFont file does not contain all the required banks or presets of the MIDI file'
@@ -679,7 +743,7 @@ class Root(TkinterDnD.Tk):
                 self.current_midi_file,
                 split_channels=self.split_channels.get())
         current_key = rs.mp.detect_scale(
-            self.current_midi_file_read.quick_merge())
+            self.current_midi_file_read.quick_merge(), most_appear_num=3)
         self.detect_key_label.configure(text=str(current_key))
 
     def get_setting(self, parameter):
