@@ -1,5 +1,21 @@
+import textwrap
+
 with open('packages/config.py', encoding='utf-8') as f:
     exec(f.read())
+
+
+def reverse_piano_keys(obj):
+    temp = rs.mp.copy(obj)
+    for k in temp.tracks:
+        for i, each in enumerate(k.notes):
+            if type(each) == rs.mp.note:
+                reverse_note = rs.mp.degree_to_note(87 - (each.degree - 21) +
+                                                    21)
+                reverse_note.channel = each.channel
+                reverse_note.duration = each.duration
+                reverse_note.volume = each.volume
+                k.notes[i] = reverse_note
+    return temp
 
 
 class Root(TkinterDnD.Tk):
@@ -49,18 +65,18 @@ class Root(TkinterDnD.Tk):
         style.configure('Custom.TNotebook.Tab', padding=[20, 4])
 
         self.notebook = ttk.Notebook(self,
-                                     height=600,
+                                     height=520,
                                      width=850,
                                      style='Custom.TNotebook')
         self.notebook.place(x=0, y=0)
 
-        self.playback_frame = ttk.Frame(self, height=600, width=850)
+        self.playback_frame = ttk.Frame(self, height=520, width=850)
         self.playback_frame.place(x=0, y=0)
 
-        self.music_function_frame = ttk.Frame(self, height=600, width=850)
+        self.music_function_frame = ttk.Frame(self, height=520, width=850)
         self.music_function_frame.place(x=0, y=0)
 
-        self.synth_control_frame = ttk.Frame(self, height=600, width=850)
+        self.synth_control_frame = ttk.Frame(self, height=520, width=850)
         self.synth_control_frame.place(x=0, y=0)
 
         self.playback_frame.drop_target_register(DND_FILES)
@@ -170,7 +186,7 @@ class Root(TkinterDnD.Tk):
         self.bank_box = ttk.Combobox(self.music_function_frame,
                                      width=10,
                                      textvariable=self.bank_text,
-                                     values=[i for i in range(128)])
+                                     values=[i for i in range(129)])
         self.bank_box.place(x=715, y=370)
         self.program_label = ttk.Label(self.music_function_frame,
                                        text='Program')
@@ -183,24 +199,33 @@ class Root(TkinterDnD.Tk):
         self.export_audio_button = ttk.Button(self.music_function_frame,
                                               text='Export As Audio',
                                               command=self.export_audio)
-        self.export_audio_button.place(x=50, y=120)
+        self.export_audio_button.place(x=50, y=100)
 
         self.modulation_before_label = ttk.Label(self.music_function_frame,
                                                  text='From Mode')
-        self.modulation_before_label.place(x=50, y=300)
+        self.modulation_before_label.place(x=50, y=250)
         self.modulation_before_entry = ttk.Entry(self.music_function_frame,
                                                  width=20)
-        self.modulation_before_entry.place(x=150, y=300)
+        self.modulation_before_entry.place(x=150, y=250)
         self.modulation_after_label = ttk.Label(self.music_function_frame,
                                                 text='to Mode')
-        self.modulation_after_label.place(x=50, y=350)
+        self.modulation_after_label.place(x=50, y=300)
         self.modulation_after_entry = ttk.Entry(self.music_function_frame,
                                                 width=20)
-        self.modulation_after_entry.place(x=150, y=350)
+        self.modulation_after_entry.place(x=150, y=300)
         self.modulation_play_button = ttk.Button(self.music_function_frame,
                                                  text='Play Modulation',
                                                  command=self.play_modulation)
-        self.modulation_play_button.place(x=50, y=400)
+        self.modulation_play_button.place(x=50, y=350)
+        self.play_reverse_button = ttk.Button(self.music_function_frame,
+                                              text='Play Reverse',
+                                              command=self.play_reverse)
+        self.play_reverse_button.place(x=50, y=150)
+        self.play_reverse_piano_key_button = ttk.Button(
+            self.music_function_frame,
+            text='Play Reverse Piano Key',
+            command=self.play_reverse_piano_key)
+        self.play_reverse_piano_key_button.place(x=50, y=200)
 
     def init_message_region(self):
         self.msg = ttk.Label(self, text='Currently no actions')
@@ -463,7 +488,10 @@ class Root(TkinterDnD.Tk):
             self.bank_box.set(current_bank)
 
     def drag_files(self, e):
-        current_file = e.data[1:-1]
+        if not (e.data[0] == '{' and e.data[-1] == '}'):
+            current_file = e.data
+        else:
+            current_file = e.data[1:-1]
         if os.path.isfile(current_file):
             extension = os.path.splitext(current_file)[1][1:]
             if extension.lower() == 'mid':
@@ -536,7 +564,8 @@ class Root(TkinterDnD.Tk):
         if current_midi_file:
             self.current_midi_file = current_midi_file
             self.current_midi_file_read = None
-            self.current_midi_label.configure(text=self.current_midi_file)
+            self.current_midi_label.configure(
+                text=textwrap.fill(self.current_midi_file, width=90))
             self.current_path = os.path.dirname(self.current_midi_file)
             self.already_load = False
 
@@ -562,10 +591,26 @@ class Root(TkinterDnD.Tk):
                 self.current_path = os.path.dirname(
                     self.current_soundfont_file)
                 self.current_soundfont_label.configure(
-                    text=self.current_soundfont_file)
+                    text=textwrap.fill(self.current_soundfont_file, width=90))
                 self.current_soundfont_label.update()
             except:
                 self.show('Invalid SoundFont file')
+
+    def start_play(self, midi_file):
+        try:
+            if self.current_sf2.playing:
+                self.current_sf2.stop()
+            if load_sf2_mode == 1:
+                self.current_sf2 = rs.sf2_player(self.current_soundfont_file)
+                self.apply_synth_settings()
+            self.current_sf2.play_midi_file(midi_file)
+            self.init_after_play()
+        except Exception as OSError:
+            self.show(
+                'Error: The loaded SoundFont file does not contain all the required banks or presets of the MIDI file'
+            )
+            return
+        self.show(f'Start playing')
 
     def init_player_bar(self, midi_file):
         if (self.current_midi_object is None) or (not self.already_load):
@@ -619,33 +664,14 @@ class Root(TkinterDnD.Tk):
         if self.current_midi_file and self.current_soundfont_file:
             if self.current_sf2.playing:
                 self.current_sf2.stop()
-            if pygame.mixer.music.get_busy():
-                pygame.mixer.music.stop()
-
             self.init_player_bar(self.current_midi_file)
-
-            try:
-                if load_sf2_mode == 1:
-                    self.current_sf2 = rs.sf2_player(
-                        self.current_soundfont_file)
-                    self.apply_synth_settings()
-                self.current_sf2.play_midi_file(self.current_midi_file)
-                self.init_after_play()
-            except Exception as OSError:
-                import traceback
-                print(traceback.format_exc())
-                self.show(
-                    'Error: The loaded SoundFont file does not contain all the required banks or presets of the MIDI file'
-                )
-                return
-            self.show(f'Start playing')
+            self.start_play(self.current_midi_file)
 
     def pause_midi(self):
         if self.current_sf2.playing:
             self.paused = True
             self.show(f'Pause playing')
             self.current_sf2.pause()
-        pygame.mixer.music.pause()
         if self.bar_move_id:
             self.after_cancel(self.bar_move_id)
             self.after_cancel(self.change_bpm_id)
@@ -657,7 +683,6 @@ class Root(TkinterDnD.Tk):
             self.paused = False
             self.show(f'Continue playing')
             self.current_sf2.unpause()
-        pygame.mixer.music.unpause()
         self.bar_move_id = self.after(1000, self.player_bar_move)
 
     def stop_midi(self):
@@ -665,8 +690,6 @@ class Root(TkinterDnD.Tk):
             self.paused = False
             self.show(f'Stop playing')
             self.current_sf2.stop()
-        if pygame.mixer.music.get_busy():
-            pygame.mixer.music.stop()
         if self.bar_move_id:
             self.after_cancel(self.bar_move_id)
             self.after_cancel(self.change_bpm_id)
@@ -710,32 +733,18 @@ class Root(TkinterDnD.Tk):
             try:
                 before_mode = rs.mp.S(self.modulation_before_entry.get())
                 after_mode = rs.mp.S(self.modulation_after_entry.get())
-                modulation_piece = rs.mp.read(
-                    self.current_midi_file,
-                    split_channels=self.split_channels.get()).modulation(
-                        before_mode, after_mode)
-                rs.mp.write(modulation_piece, name='modulation.mid')
-                self.init_player_bar('modulation.mid')
             except:
                 self.show('Error: Invalid mode')
                 return
-            try:
-                if self.current_sf2.playing:
-                    self.current_sf2.stop()
-                if pygame.mixer.music.get_busy():
-                    pygame.mixer.music.stop()
-                if load_sf2_mode == 1:
-                    self.current_sf2 = rs.sf2_player(
-                        self.current_soundfont_file)
-                    self.apply_synth_settings()
-                self.current_sf2.play_midi_file('modulation.mid')
-                self.init_after_play()
-            except Exception as OSError:
-                self.show(
-                    'Error: The loaded SoundFont file does not contain all the required banks or presets of the MIDI file'
-                )
-                return
-            self.show(f'Start playing')
+            modulation_piece = rs.mp.read(
+                self.current_midi_file,
+                split_channels=self.split_channels.get()).modulation(
+                    before_mode, after_mode)
+            rs.mp.write(modulation_piece, name='modulation.mid')
+            self.already_load = False
+            self.init_player_bar('modulation.mid')
+            self.start_play('modulation.mid')
+            self.already_load = False
 
     def detect_key(self):
         if not self.current_midi_file_read:
@@ -745,6 +754,29 @@ class Root(TkinterDnD.Tk):
         current_key = rs.mp.detect_scale(
             self.current_midi_file_read.quick_merge(), most_appear_num=3)
         self.detect_key_label.configure(text=str(current_key))
+
+    def play_reverse(self):
+        if not self.current_midi_file_read:
+            self.current_midi_file_read = rs.mp.read(
+                self.current_midi_file,
+                split_channels=self.split_channels.get())
+        rs.mp.write(self.current_midi_file_read.reverse(), name='temp.mid')
+        self.already_load = False
+        self.init_player_bar('temp.mid')
+        self.start_play('temp.mid')
+        self.already_load = False
+
+    def play_reverse_piano_key(self):
+        if not self.current_midi_file_read:
+            self.current_midi_file_read = rs.mp.read(
+                self.current_midi_file,
+                split_channels=self.split_channels.get())
+        rs.mp.write(reverse_piano_keys(self.current_midi_file_read),
+                    name='temp.mid')
+        self.already_load = False
+        self.init_player_bar('temp.mid')
+        self.start_play('temp.mid')
+        self.already_load = False
 
     def get_setting(self, parameter):
         return self.current_sf2.synth.get_setting(f'synth.{parameter}')
