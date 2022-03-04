@@ -135,10 +135,10 @@ class Root(TkinterDnD.Tk):
 
         self.channel_label = ttk.Label(self.music_function_frame,
                                        text='Channel')
-        self.channel_label.place(x=500, y=60)
+        self.channel_label.place(x=500, y=20)
         self.instrument_label = ttk.Label(self.music_function_frame,
                                           text='Instrument')
-        self.instrument_label.place(x=630, y=60)
+        self.instrument_label.place(x=630, y=20)
         self.custom_play_listbox = Listbox(self.music_function_frame,
                                            exportselection=False,
                                            activestyle='none')
@@ -149,14 +149,14 @@ class Root(TkinterDnD.Tk):
                                           disabledforeground='black')
         for k in range(16):
             self.custom_play_listbox.insert(END, f'Channel {k+1}')
-        self.custom_play_listbox.place(x=500, y=90, width=100, height=300)
+        self.custom_play_listbox.place(x=500, y=50, width=100, height=300)
         self.custom_play_listbox.bind('<<ListboxSelect>>',
                                       self.show_current_program_and_bank)
         self.whole_instruments = list(rs.mp.instruments.keys())
         self.whole_instruments_with_number = [
             f'{i+1}  {each}' for i, each in enumerate(self.whole_instruments)
         ]
-        self.instrument_listbox.place(x=630, y=90, width=150, height=300)
+        self.instrument_listbox.place(x=630, y=50, width=150, height=300)
         self.program_text = StringVar()
         self.program_text.set(self.whole_instruments_with_number[0])
         self.program_box = ttk.Combobox(
@@ -164,19 +164,19 @@ class Root(TkinterDnD.Tk):
             width=25,
             textvariable=self.program_text,
             values=self.whole_instruments_with_number)
-        self.program_box.place(x=500, y=410)
+        self.program_box.place(x=500, y=370)
         self.bank_text = IntVar()
         self.bank_text.set(0)
         self.bank_box = ttk.Combobox(self.music_function_frame,
                                      width=10,
                                      textvariable=self.bank_text,
                                      values=[i for i in range(128)])
-        self.bank_box.place(x=715, y=410)
+        self.bank_box.place(x=715, y=370)
         self.program_label = ttk.Label(self.music_function_frame,
                                        text='Program')
         self.bank_label = ttk.Label(self.music_function_frame, text='Bank')
-        self.program_label.place(x=500, y=440)
-        self.bank_label.place(x=715, y=440)
+        self.program_label.place(x=500, y=400)
+        self.bank_label.place(x=715, y=400)
         self.program_box.bind('<<ComboboxSelected>>', self.change_program)
         self.bank_box.bind('<<ComboboxSelected>>', self.change_bank)
 
