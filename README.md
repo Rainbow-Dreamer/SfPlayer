@@ -34,6 +34,7 @@ SfPlayer is a simple SoundFont player that has the following functionality:
 
 * More functionality is on the way!
 
+
 ## Usage
 
 SfPlayer currently only supports Windows.
@@ -42,13 +43,16 @@ Click on `Choose MIDI File` button to select a MIDI file, click on `Choose Sound
 
 Go to different panes by selecting on tabs at the top to use functionality related to the pane's name.
 
+
 ## Previews
 
 ![image](previews/1.jpg)
 
+
 ## Download
 
 Click [here](https://github.com/Rainbow-Dreamer/SfPlayer/archive/refs/heads/main.zip) to download the latest version of SfPlayer.
+
 
 ## TODO
 
