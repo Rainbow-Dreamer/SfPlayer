@@ -1,4 +1,5 @@
 # SfPlayer
+
 ## Introduction
 
 SfPlayer is a simple SoundFont player that has the following functionality:
@@ -9,7 +10,7 @@ SfPlayer is a simple SoundFont player that has the following functionality:
 
 * Support Standard MIDI File (SMF) and RIFF MIDI file for MIDI files, sf2 / sf3 / dls for SoundFont files
 
-* MIDI playback bar with full control and pause / unpause / stop functionality
+* MIDI playback bar with full time control and pause / unpause / stop functionality
 
 * Volume and BPM control widgets corresponding to MIDI and SoundFont
 
@@ -25,8 +26,6 @@ SfPlayer is a simple SoundFont player that has the following functionality:
 
 * Detect the most possible main key of the MIDI file using music theory algorithm
 
-* Custom the instruments of each track of the MIDI file using for playback
-
 * Perform an entire modulation from a mode to another mode on the MIDI file and play
 
 * Play the MIDI file in reverse
@@ -34,8 +33,6 @@ SfPlayer is a simple SoundFont player that has the following functionality:
 * Play the MIDI file as if it is played on a 88-key piano but the piano keys are reversed
 
 * More functionality is on the way!
-
-  
 
 ## Usage
 
@@ -45,19 +42,13 @@ Click on `Choose MIDI File` button to select a MIDI file, click on `Choose Sound
 
 Go to different panes by selecting on tabs at the top to use functionality related to the pane's name.
 
-
-
 ## Previews
 
 ![image](previews/1.jpg)
 
-
-
 ## Download
 
 Click [here](https://github.com/Rainbow-Dreamer/SfPlayer/archive/refs/heads/main.zip) to download the latest version of SfPlayer.
-
-
 
 ## TODO
 
