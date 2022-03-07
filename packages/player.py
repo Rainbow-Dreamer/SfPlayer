@@ -601,6 +601,7 @@ class Root(TkinterDnD.Tk):
             if self.current_sf2.playing:
                 self.current_sf2.stop()
             if load_sf2_mode == 1:
+                self.current_sf2.synth.delete()
                 self.current_sf2 = rs.sf2_player(self.current_soundfont_file)
                 self.apply_synth_settings()
             self.current_sf2.play_midi_file(midi_file)
