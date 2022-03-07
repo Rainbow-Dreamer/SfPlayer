@@ -239,6 +239,7 @@ class Root(TkinterDnD.Tk):
         self.init_chorus_button()
         self.init_chorus_parameters_bar()
         self.init_midi_cc_bar()
+        self.init_pitch_bend_bar()
 
     def init_volume_bar(self):
         self.volume_slider = StringVar()
@@ -258,6 +259,12 @@ class Root(TkinterDnD.Tk):
             takefocus=False)
         self.set_move_volume_bar.place(x=200, y=50)
 
+    def change_move_volume_bar(self, e):
+        self.current_volume_percentage = round(float(e) * 2) / 2
+        self.volume_slider.set(f'Volume  {self.current_volume_percentage}%')
+        self.change_setting('gain', self.current_volume_percentage / 10)
+        self.synth_volume = self.current_volume_percentage / 10
+
     def init_bpm_bar(self):
         self.bpm_slider = StringVar()
         self.current_bpm = 120
@@ -275,12 +282,6 @@ class Root(TkinterDnD.Tk):
             command=lambda e: self.change_move_bpm_bar(e),
             takefocus=False)
         self.set_move_bpm_bar.place(x=200, y=100)
-
-    def change_move_volume_bar(self, e):
-        self.current_volume_percentage = round(float(e) * 2) / 2
-        self.volume_slider.set(f'Volume  {self.current_volume_percentage}%')
-        self.change_setting('gain', self.current_volume_percentage / 10)
-        self.synth_volume = self.current_volume_percentage / 10
 
     def change_move_bpm_bar(self, e):
         self.current_bpm = int(float(e))
@@ -316,7 +317,8 @@ class Root(TkinterDnD.Tk):
                                             text='Channel')
         self.midi_channel_label.place(x=780, y=50)
         self.cc_box.bind('<<ComboboxSelected>>', self.show_current_cc)
-        self.channel_box.bind('<<ComboboxSelected>>', self.show_current_cc)
+        self.channel_box.bind('<<ComboboxSelected>>',
+                              self.show_current_channel_msg)
 
         self.midi_cc_slider = StringVar()
         current_cc = self.get_current_cc()
@@ -340,7 +342,11 @@ class Root(TkinterDnD.Tk):
             self.midi_channel_text.get(),
             self.midi_cc_list.index(self.midi_cc_text.get()))
 
-    def show_current_cc(self, e):
+    def show_current_channel_msg(self, e):
+        self.show_current_cc()
+        self.show_current_pitch_bend()
+
+    def show_current_cc(self, e=None):
         current_cc = self.get_current_cc()
         self.midi_cc_slider.set(f'MIDI CC  {current_cc}')
         self.set_move_midi_cc_bar.set(current_cc)
@@ -351,6 +357,42 @@ class Root(TkinterDnD.Tk):
         self.current_sf2.synth.cc(
             self.midi_channel_text.get(),
             self.midi_cc_list.index(self.midi_cc_text.get()), current_midi_cc)
+
+    def init_pitch_bend_bar(self):
+        self.pitch_bend_slider = StringVar()
+        current_pitch_bend = self.get_current_pitch_bend()
+        self.pitch_bend_slider.set(f'Pitch Bend  {current_pitch_bend}%')
+        self.pitch_bend_slider_label = ttk.Label(
+            self.synth_control_frame, textvariable=self.pitch_bend_slider)
+        self.pitch_bend_slider_label.place(x=420, y=100)
+        self.set_move_pitch_bend_bar = ttk.Scale(
+            self.synth_control_frame,
+            from_=-100,
+            to=100,
+            orient=HORIZONTAL,
+            length=250,
+            value=current_pitch_bend,
+            command=lambda e: self.change_move_pitch_bend_bar(e),
+            takefocus=False)
+        self.set_move_pitch_bend_bar.place(x=550, y=100)
+
+    def get_current_pitch_bend(self):
+        current_pitch_bend = self.current_sf2.synth.get_pitch_bend(
+            self.midi_channel_text.get())
+        current_pitch_bend = int(((current_pitch_bend - 8191) / 8191) * 100)
+        return current_pitch_bend
+
+    def show_current_pitch_bend(self):
+        current_pitch_bend = self.get_current_pitch_bend()
+        self.pitch_bend_slider.set(f'Pitch Bend  {current_pitch_bend}%')
+        self.set_move_pitch_bend_bar['value'] = current_pitch_bend
+
+    def change_move_pitch_bend_bar(self, e):
+        current_pitch_bend = float(e)
+        current_pitch_bend_value = round((current_pitch_bend / 100) * 8191)
+        self.pitch_bend_slider.set(f'Pitch Bend  {int(current_pitch_bend)}%')
+        self.current_sf2.synth.pitch_bend(self.midi_channel_text.get(),
+                                          current_pitch_bend_value)
 
     def init_reverb_button(self):
         self.has_reverb = IntVar()
