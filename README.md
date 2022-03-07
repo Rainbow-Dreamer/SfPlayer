@@ -43,6 +43,3 @@ Click [here](https://github.com/Rainbow-Dreamer/SfPlayer/archive/refs/heads/main
 
 ## Previews
 
-<img src="previews/1.jpg" alt="image" style="zoom:50%;" />
-
-![image](previews/2.jpg)
