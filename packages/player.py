@@ -53,7 +53,7 @@ class Root(TkinterDnD.Tk):
         self.bpm_outer_change = False
 
     def init_main_window(self):
-        self.minsize(850, 520)
+        self.minsize(900, 520)
         self.title('SfPlayer')
         self.configure(bg='white')
 
@@ -66,17 +66,17 @@ class Root(TkinterDnD.Tk):
 
         self.notebook = ttk.Notebook(self,
                                      height=520,
-                                     width=850,
+                                     width=900,
                                      style='Custom.TNotebook')
         self.notebook.place(x=0, y=0)
 
-        self.playback_frame = ttk.Frame(self, height=520, width=850)
+        self.playback_frame = ttk.Frame(self, height=520, width=900)
         self.playback_frame.place(x=0, y=0)
 
-        self.music_function_frame = ttk.Frame(self, height=520, width=850)
+        self.music_function_frame = ttk.Frame(self, height=520, width=900)
         self.music_function_frame.place(x=0, y=0)
 
-        self.synth_control_frame = ttk.Frame(self, height=520, width=850)
+        self.synth_control_frame = ttk.Frame(self, height=520, width=900)
         self.synth_control_frame.place(x=0, y=0)
 
         self.playback_frame.drop_target_register(DND_FILES)
@@ -238,6 +238,7 @@ class Root(TkinterDnD.Tk):
         self.init_reverb_parameters_bar()
         self.init_chorus_button()
         self.init_chorus_parameters_bar()
+        self.init_midi_cc_bar()
 
     def init_volume_bar(self):
         self.volume_slider = StringVar()
@@ -251,7 +252,7 @@ class Root(TkinterDnD.Tk):
             from_=0,
             to=100,
             orient=HORIZONTAL,
-            length=500,
+            length=200,
             value=self.current_volume_percentage,
             command=lambda e: self.change_move_volume_bar(e),
             takefocus=False)
@@ -269,14 +270,14 @@ class Root(TkinterDnD.Tk):
             from_=0,
             to=1000,
             orient=HORIZONTAL,
-            length=500,
+            length=200,
             value=self.current_bpm,
             command=lambda e: self.change_move_bpm_bar(e),
             takefocus=False)
         self.set_move_bpm_bar.place(x=200, y=100)
 
     def change_move_volume_bar(self, e):
-        self.current_volume_percentage = round(float(e) * 5) / 5
+        self.current_volume_percentage = round(float(e) * 2) / 2
         self.volume_slider.set(f'Volume  {self.current_volume_percentage}%')
         self.change_setting('gain', self.current_volume_percentage / 10)
         self.synth_volume = self.current_volume_percentage / 10
@@ -289,6 +290,67 @@ class Root(TkinterDnD.Tk):
                 self.bpm_outer_change = False
             else:
                 self.current_sf2.set_tempo(self.current_bpm)
+
+    def init_midi_cc_bar(self):
+        self.midi_cc_list = [f'{i}  {j}' for i, j in midi_cc.items()]
+        self.midi_cc_text = StringVar()
+        self.midi_cc_text.set(self.midi_cc_list[0])
+        self.cc_box = ttk.Combobox(self.synth_control_frame,
+                                   width=20,
+                                   textvariable=self.midi_cc_text,
+                                   values=self.midi_cc_list,
+                                   takefocus=False)
+        self.cc_box.place(x=670, y=20)
+        self.midi_channel_list = [i for i in range(16)]
+        self.midi_channel_text = IntVar()
+        self.midi_channel_text.set(0)
+        self.channel_box = ttk.Combobox(self.synth_control_frame,
+                                        width=10,
+                                        textvariable=self.midi_channel_text,
+                                        values=self.midi_channel_list,
+                                        takefocus=False)
+        self.channel_box.place(x=670, y=50)
+        self.midi_cc_label = ttk.Label(self.synth_control_frame, text='CC')
+        self.midi_cc_label.place(x=850, y=20)
+        self.midi_channel_label = ttk.Label(self.synth_control_frame,
+                                            text='Channel')
+        self.midi_channel_label.place(x=780, y=50)
+        self.cc_box.bind('<<ComboboxSelected>>', self.show_current_cc)
+        self.channel_box.bind('<<ComboboxSelected>>', self.show_current_cc)
+
+        self.midi_cc_slider = StringVar()
+        current_cc = self.get_current_cc()
+        self.midi_cc_slider.set(f'MIDI CC  {current_cc}')
+        self.midi_cc_slider_label = ttk.Label(self.synth_control_frame,
+                                              textvariable=self.midi_cc_slider)
+        self.midi_cc_slider_label.place(x=420, y=50)
+        self.set_move_midi_cc_bar = ttk.Scale(
+            self.synth_control_frame,
+            from_=0,
+            to=127,
+            orient=HORIZONTAL,
+            length=150,
+            value=current_cc,
+            command=lambda e: self.change_move_midi_cc_bar(e),
+            takefocus=False)
+        self.set_move_midi_cc_bar.place(x=510, y=50)
+
+    def get_current_cc(self):
+        return self.current_sf2.synth.get_cc(
+            self.midi_channel_text.get(),
+            self.midi_cc_list.index(self.midi_cc_text.get()))
+
+    def show_current_cc(self, e):
+        current_cc = self.get_current_cc()
+        self.midi_cc_slider.set(f'MIDI CC  {current_cc}')
+        self.set_move_midi_cc_bar.set(current_cc)
+
+    def change_move_midi_cc_bar(self, e):
+        current_midi_cc = int(float(e))
+        self.midi_cc_slider.set(f'MIDI CC  {current_midi_cc}')
+        self.current_sf2.synth.cc(
+            self.midi_channel_text.get(),
+            self.midi_cc_list.index(self.midi_cc_text.get()), current_midi_cc)
 
     def init_reverb_button(self):
         self.has_reverb = IntVar()
