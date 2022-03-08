@@ -172,12 +172,15 @@ class Root(TkinterDnD.Tk):
         self.whole_instruments_with_number = [
             f'{i+1}  {each}' for i, each in enumerate(self.whole_instruments)
         ]
+        for i, j in rs.mp.drum_set_dict.items():
+            self.whole_instruments_with_number[
+                i - 1] = f'{self.whole_instruments_with_number[i-1]} / {j}'
         self.instrument_listbox.place(x=630, y=50, width=150, height=300)
         self.program_text = StringVar()
         self.program_text.set(self.whole_instruments_with_number[0])
         self.program_box = ttk.Combobox(
             self.music_function_frame,
-            width=25,
+            width=30,
             textvariable=self.program_text,
             values=self.whole_instruments_with_number)
         self.program_box.place(x=500, y=370)
@@ -187,12 +190,12 @@ class Root(TkinterDnD.Tk):
                                      width=10,
                                      textvariable=self.bank_text,
                                      values=[i for i in range(129)])
-        self.bank_box.place(x=715, y=370)
+        self.bank_box.place(x=750, y=370)
         self.program_label = ttk.Label(self.music_function_frame,
                                        text='Program')
         self.bank_label = ttk.Label(self.music_function_frame, text='Bank')
         self.program_label.place(x=500, y=400)
-        self.bank_label.place(x=715, y=400)
+        self.bank_label.place(x=750, y=400)
         self.program_box.bind('<<ComboboxSelected>>', self.change_program)
         self.bank_box.bind('<<ComboboxSelected>>', self.change_bank)
 
