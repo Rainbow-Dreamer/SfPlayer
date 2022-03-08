@@ -42,7 +42,7 @@ Click on the `Play` button to start playing the MIDI file with the loaded SoundF
 
 Click on the playback bar or mouse drag to change the current playing position of the MIDI file.
 
-Turn the `Split Channels` button on to do special split channels operation when the MIDI file has all of the channels on a single track.
+Turn the `Split Channels` button on to do special split channels operation when the MIDI file has all of the channels on a single track, this function works when you export the audio or play the MIDI file using music functions.
 
 ### Synth Settings
 
