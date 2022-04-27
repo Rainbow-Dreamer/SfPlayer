@@ -70,7 +70,7 @@ The message at the bottom is used for showing errors when users are not doing co
 
 Click [here](https://github.com/Rainbow-Dreamer/SfPlayer/archive/refs/heads/main.zip) to download the latest version of SfPlayer.
 
-**Note: If you want to use `export as audio` function to export non-wav audio files (such as mp3, ogg), you need to download ffmpeg,
+**Note: If you want to use `Export As Audio` function to export non-wav audio files (such as mp3, ogg), you need to download ffmpeg,
 put the ffmpeg folder in C: on Windows, and then add `C:\\ffmpeg\\bin` to system environment variables, then restart the computer.
 You can download ffmpeg from [here](https://github.com/Rainbow-Dreamer/musicpy/releases/download/5.16/ffmpeg.zip)**
 
