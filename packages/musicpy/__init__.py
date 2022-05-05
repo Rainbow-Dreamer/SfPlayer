@@ -1,1 +1,1 @@
-from .musicpy import *
+from musicpy.musicpy import *
