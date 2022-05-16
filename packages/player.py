@@ -665,7 +665,6 @@ class Root(TkinterDnD.Tk):
     def choose_midi(self, current_midi_file=None):
         if current_midi_file is None:
             current_midi_file = filedialog.askopenfilename(
-                initialdir=self.current_path,
                 title="Choose MIDI File",
                 filetypes=(('MIDI files', "*.mid"), ("All files", "*.*")))
         if current_midi_file:
@@ -687,7 +686,6 @@ class Root(TkinterDnD.Tk):
     def choose_soundfont(self, current_soundfont_file=None):
         if current_soundfont_file is None:
             current_soundfont_file = filedialog.askopenfilename(
-                initialdir=self.current_path,
                 title="Choose SoundFont File",
                 filetypes=(('SoundFont files', "*.sf2;*.sf3;*.dls"),
                            ("All files", "*.*")))
@@ -808,8 +806,7 @@ class Root(TkinterDnD.Tk):
         self.player_bar_set_time(self.current_second)
 
     def export_audio(self):
-        file_name = filedialog.asksaveasfile(initialdir=self.current_path,
-                                             title="Export as audio",
+        file_name = filedialog.asksaveasfile(title="Export as audio",
                                              defaultextension='.wav',
                                              filetypes=(("All files",
                                                          "*.*"), ),
