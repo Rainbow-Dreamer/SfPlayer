@@ -666,7 +666,7 @@ class Root(TkinterDnD.Tk):
         if current_midi_file is None:
             current_midi_file = filedialog.askopenfilename(
                 title="Choose MIDI File",
-                filetypes=(('MIDI files', "*.mid"), ("All files", "*.*")))
+                filetypes=(('MIDI files', ".mid"), ("All files", "*")))
         if current_midi_file:
             self.current_midi_file = current_midi_file
             self.current_midi_file_read = None
@@ -687,8 +687,8 @@ class Root(TkinterDnD.Tk):
         if current_soundfont_file is None:
             current_soundfont_file = filedialog.askopenfilename(
                 title="Choose SoundFont File",
-                filetypes=(('SoundFont files', "*.sf2;*.sf3;*.dls"),
-                           ("All files", "*.*")))
+                filetypes=(('SoundFont files', ".sf2 .sf3 .dls"), ("All files",
+                                                                   "*")))
         if current_soundfont_file:
             try:
                 self.current_sf2.load(current_soundfont_file)
