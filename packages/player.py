@@ -856,7 +856,7 @@ class Root(TkinterDnD.Tk):
             self.current_midi_file_read = rs.mp.read(
                 self.current_midi_file,
                 split_channels=self.split_channels.get())
-        current_key = rs.mp.detect_scale(
+        current_key = rs.mp.alg.detect_scale(
             self.current_midi_file_read.quick_merge(), most_appear_num=3)
         self.detect_key_label.configure(text=str(current_key))
 
