@@ -808,8 +808,7 @@ class Root(TkinterDnD.Tk):
     def export_audio(self):
         file_name = filedialog.asksaveasfile(title="Export as audio",
                                              defaultextension='.wav',
-                                             filetypes=(("All files",
-                                                         "*.*"), ),
+                                             filetypes=(("All files", "*"), ),
                                              initialfile='Untitled.wav')
         if not file_name:
             return
