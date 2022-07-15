@@ -230,6 +230,16 @@ class Root(TkinterDnD.Tk):
             command=self.play_reverse_piano_key)
         self.play_reverse_piano_key_button.place(x=50, y=200)
 
+        self.play_negative_harmony_button = ttk.Button(
+            self.music_function_frame,
+            text='Play Negative Harmony',
+            command=self.play_negative_harmony)
+        self.play_negative_harmony_button.place(x=50, y=400)
+        self.key_label = ttk.Label(self.music_function_frame, text='key')
+        self.key_label.place(x=220, y=400)
+        self.key_entry = ttk.Entry(self.music_function_frame, width=10)
+        self.key_entry.place(x=260, y=400)
+
     def init_message_region(self):
         self.msg = ttk.Label(self, text='Currently no actions')
         self.msg.place(x=50, y=480)
@@ -849,6 +859,26 @@ class Root(TkinterDnD.Tk):
             self.init_player_bar('modulation.mid')
             self.start_play('modulation.mid')
             self.already_load = False
+
+    def play_negative_harmony(self):
+        current_key = self.key_entry.get()
+        try:
+            current_piece = rs.mp.read(
+                self.current_midi_file,
+                split_channels=self.split_channels.get())
+            for i in range(len(current_piece.tracks)):
+                if current_piece.channels and current_piece.channels[i] == 9:
+                    continue
+                current_piece.tracks[i] = rs.mp.alg.negative_harmony(
+                    rs.mp.scale(current_key, 'major'), current_piece.tracks[i])
+            current_name = f'{os.path.splitext(os.path.split(self.current_midi_file)[1])[0]}_negative_harmony.mid'
+            rs.mp.write(current_piece, name=current_name)
+            self.already_load = False
+            self.init_player_bar(current_name)
+            self.start_play(current_name)
+            self.already_load = False
+        except Exception as e:
+            self.show(str(e))
 
     def detect_key(self):
         if not self.current_midi_file_read:
