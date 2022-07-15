@@ -869,6 +869,8 @@ class Root(TkinterDnD.Tk):
             for i in range(len(current_piece.tracks)):
                 if current_piece.channels and current_piece.channels[i] == 9:
                     continue
+                if len(current_piece.tracks[i]) == 0:
+                    continue
                 current_piece.tracks[i] = rs.mp.alg.negative_harmony(
                     rs.mp.scale(current_key, 'major'), current_piece.tracks[i])
             current_name = f'{os.path.splitext(os.path.split(self.current_midi_file)[1])[0]}_negative_harmony.mid'
