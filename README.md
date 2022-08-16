@@ -19,6 +19,7 @@ SfPlayer is a simple SoundFont player that has the following functionality:
 * Perform an entire modulation from a mode to another mode on the MIDI file and play
 * Play the MIDI file in reverse
 * Play the MIDI file as if it is played on a 88-key piano but the piano keys are reversed
+* Play the MIDI file in negative harmony of a given key
 * More functionality is on the way!
 
 
