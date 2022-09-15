@@ -168,7 +168,7 @@ class Root(TkinterDnD.Tk):
         self.custom_play_listbox.place(x=500, y=50, width=100, height=300)
         self.custom_play_listbox.bind('<<ListboxSelect>>',
                                       self.show_current_program_and_bank)
-        self.whole_instruments = list(rs.mp.instruments.keys())
+        self.whole_instruments = list(rs.mp.INSTRUMENTS.keys())
         self.whole_instruments_with_number = [
             f'{i+1}  {each}' for i, each in enumerate(self.whole_instruments)
         ]
