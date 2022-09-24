@@ -29,6 +29,7 @@ class Root(TkinterDnD.Tk):
         self.init_music_function_region()
         self.init_message_region()
         self.init_synth_control_region()
+        self.apply_synth_settings()
         try:
             self.choose_midi('resources/demo.mid')
             self.choose_soundfont('resources/gm.sf2')
@@ -45,8 +46,6 @@ class Root(TkinterDnD.Tk):
         self.current_path = '.'
         self.synth_volume = default_synth_volume
         self.current_sf2 = rs.sf2_player()
-        self.change_setting('gain', self.synth_volume)
-        self.change_setting('cpu-cores', cpu_cores)
         self.current_second = 0
         self.bar_move_id = None
         self.change_bpm_id = None
@@ -569,6 +568,7 @@ class Root(TkinterDnD.Tk):
                             self.current_chorus_values[ind])
 
     def apply_synth_settings(self):
+        self.change_setting('cpu-cores', cpu_cores)
         self.change_setting('gain', self.synth_volume)
         self.change_setting('reverb.active', self.has_reverb.get())
         for i, each in enumerate(self.reverb_parameters):
