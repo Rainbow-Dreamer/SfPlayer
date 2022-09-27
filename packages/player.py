@@ -167,11 +167,11 @@ class Root(TkinterDnD.Tk):
         self.custom_play_listbox.place(x=500, y=50, width=100, height=300)
         self.custom_play_listbox.bind('<<ListboxSelect>>',
                                       self.show_current_program_and_bank)
-        self.whole_instruments = list(rs.mp.INSTRUMENTS.keys())
+        self.whole_instruments = list(rs.mp.database.INSTRUMENTS.keys())
         self.whole_instruments_with_number = [
             f'{i+1}  {each}' for i, each in enumerate(self.whole_instruments)
         ]
-        for i, j in rs.mp.drum_set_dict.items():
+        for i, j in rs.mp.database.drum_set_dict.items():
             self.whole_instruments_with_number[
                 i - 1] = f'{self.whole_instruments_with_number[i-1]} / {j}'
         self.instrument_listbox.place(x=630, y=50, width=150, height=300)
