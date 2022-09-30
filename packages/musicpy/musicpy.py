@@ -183,6 +183,8 @@ chd = getchord
 
 
 def concat(chordlist, mode='+', extra=None, start=None):
+    if not chordlist:
+        return chordlist
     temp = copy(chordlist[0]) if start is None else start
     start_ind = 1 if start is None else 0
     if mode == '+':
@@ -332,6 +334,15 @@ def read(name,
             each for each in available_tracks
             if not any(j.type == 'note_on' and j.channel == 9 for j in each)
         ]
+    if not available_tracks:
+        if changes:
+            return build([changes],
+                         bpm=whole_bpm,
+                         other_messages=changes.other_messages)
+        else:
+            raise ValueError(
+                'No tracks found in the MIDI file, you can try to set the parameter `split_channels` to True, or check if the input MIDI file is empty'
+            )
     all_tracks = [
         midi_to_chord(current_midi,
                       available_tracks[j],
@@ -515,15 +526,9 @@ def read(name,
                 drum_ind = result_piece.channels.index(9)
                 del result_piece[drum_ind]
     else:
-        if result_piece.tracks:
-            result_piece.other_messages = concat([
-                each_track.other_messages for each_track in result_piece.tracks
-            ],
-                                                 start=[])
-        else:
-            raise ValueError(
-                'No tracks found in the MIDI file, you can try to set the parameter `split_channels` to True, or check if the input MIDI file is empty'
-            )
+        result_piece.other_messages = concat(
+            [each_track.other_messages for each_track in result_piece.tracks],
+            start=[])
     if find_changes and changes:
         result_piece.tracks[0].notes.extend(changes.notes)
         result_piece.tracks[0].interval.extend(changes.interval)
@@ -969,6 +974,30 @@ def add_other_messages(MyMIDI, other_messages, write_type='piece'):
                 MyMIDI.addTrackName(curernt_track, each.time, each.name)
         except:
             pass
+
+
+def find_first_tempo(file, is_file=False):
+    if is_file:
+        file.seek(0)
+        try:
+            current_midi = mido.midifiles.MidiFile(file=file, clip=True)
+            file.close()
+        except Exception as OSError:
+            file.seek(0)
+            current_midi = mido.midifiles.MidiFile(file=riff_to_midi(file),
+                                                   clip=True)
+            file.close()
+    else:
+        try:
+            current_midi = mido.midifiles.MidiFile(file, clip=True)
+        except Exception as OSError:
+            current_midi = mido.midifiles.MidiFile(file=riff_to_midi(file),
+                                                   clip=True)
+    for track in current_midi.tracks:
+        for msg in track:
+            if msg.type == 'set_tempo':
+                return mido.midifiles.units.tempo2bpm(msg.tempo)
+    return 120
 
 
 def modulation(current_chord, old_scale, new_scale, **args):
