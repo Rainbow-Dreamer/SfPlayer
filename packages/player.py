@@ -131,15 +131,6 @@ class Root(TkinterDnD.Tk):
         self.player_bar.bind('<Button-1>', self.player_bar_click)
         self.player_bar.bind('<B1-Motion>', self.player_bar_click)
 
-        self.split_channels = IntVar()
-        self.split_channels.set(0)
-        self.split_channels_button = ttk.Checkbutton(
-            self.playback_frame,
-            text='Split Channels',
-            variable=self.split_channels,
-            takefocus=False)
-        self.split_channels_button.place(x=50, y=370)
-
     def init_music_function_region(self):
         self.detect_key_button = ttk.Button(self.music_function_frame,
                                             text='Detect Key',
@@ -832,7 +823,6 @@ class Root(TkinterDnD.Tk):
         try:
             current_sf2.export_midi_file(
                 self.current_midi_file,
-                split_channels=self.split_channels.get(),
                 name=file_name,
                 format=os.path.splitext(file_name)[1][1:])
         except Exception as OSError:
@@ -850,10 +840,8 @@ class Root(TkinterDnD.Tk):
             except:
                 self.show('Error: Invalid mode')
                 return
-            modulation_piece = rs.mp.read(
-                self.current_midi_file,
-                split_channels=self.split_channels.get()).modulation(
-                    before_mode, after_mode)
+            modulation_piece = rs.mp.read(self.current_midi_file).modulation(
+                before_mode, after_mode)
             rs.mp.write(modulation_piece, name='modulation.mid')
             self.already_load = False
             self.init_player_bar('modulation.mid')
@@ -863,9 +851,7 @@ class Root(TkinterDnD.Tk):
     def play_negative_harmony(self):
         current_key = self.key_entry.get()
         try:
-            current_piece = rs.mp.read(
-                self.current_midi_file,
-                split_channels=self.split_channels.get())
+            current_piece = rs.mp.read(self.current_midi_file)
             for i in range(len(current_piece.tracks)):
                 if current_piece.channels and current_piece.channels[i] == 9:
                     continue
@@ -884,18 +870,14 @@ class Root(TkinterDnD.Tk):
 
     def detect_key(self):
         if not self.current_midi_file_read:
-            self.current_midi_file_read = rs.mp.read(
-                self.current_midi_file,
-                split_channels=self.split_channels.get())
+            self.current_midi_file_read = rs.mp.read(self.current_midi_file)
         current_key = rs.mp.alg.detect_scale(
             self.current_midi_file_read.quick_merge(), most_appear_num=3)
         self.detect_key_label.configure(text=str(current_key))
 
     def play_reverse(self):
         if not self.current_midi_file_read:
-            self.current_midi_file_read = rs.mp.read(
-                self.current_midi_file,
-                split_channels=self.split_channels.get())
+            self.current_midi_file_read = rs.mp.read(self.current_midi_file)
         rs.mp.write(self.current_midi_file_read.reverse(), name='temp.mid')
         self.already_load = False
         self.init_player_bar('temp.mid')
@@ -904,9 +886,7 @@ class Root(TkinterDnD.Tk):
 
     def play_reverse_piano_key(self):
         if not self.current_midi_file_read:
-            self.current_midi_file_read = rs.mp.read(
-                self.current_midi_file,
-                split_channels=self.split_channels.get())
+            self.current_midi_file_read = rs.mp.read(self.current_midi_file)
         rs.mp.write(reverse_piano_keys(self.current_midi_file_read),
                     name='temp.mid')
         self.already_load = False
