@@ -5,8 +5,7 @@ import os
 import sys
 
 sys.path.append('packages')
-import mido
-import midiutil
+import mido_fix
 import pygame
 import py
 import pydub
