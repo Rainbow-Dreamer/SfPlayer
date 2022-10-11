@@ -1,4 +1,5 @@
 import textwrap
+import mido_fix as mido
 
 with open('packages/config.py', encoding='utf-8') as f:
     exec(f.read())
