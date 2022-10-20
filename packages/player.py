@@ -1,5 +1,6 @@
 import textwrap
 import mido_fix as mido
+import random
 
 with open('packages/config.py', encoding='utf-8') as f:
     exec(f.read())
@@ -30,6 +31,7 @@ class Root(TkinterDnD.Tk):
         self.init_music_function_region()
         self.init_message_region()
         self.init_synth_control_region()
+        self.init_playlist_region()
         self.apply_synth_settings()
         try:
             self.choose_midi('resources/demo.mid')
@@ -79,12 +81,16 @@ class Root(TkinterDnD.Tk):
         self.synth_control_frame = ttk.Frame(self, height=520, width=900)
         self.synth_control_frame.place(x=0, y=0)
 
+        self.playlist_frame = ttk.Frame(self, height=520, width=900)
+        self.playlist_frame.place(x=0, y=0)
+
         self.playback_frame.drop_target_register(DND_FILES)
         self.playback_frame.dnd_bind('<<Drop>>', self.drag_files)
 
         self.notebook.add(self.playback_frame, text='Playback')
         self.notebook.add(self.synth_control_frame, text='Synth Settings')
         self.notebook.add(self.music_function_frame, text='Music Functions')
+        self.notebook.add(self.playlist_frame, text='Playlist')
 
     def init_choose_file_region(self):
         self.choose_midi_button = ttk.Button(self.playback_frame,
@@ -138,7 +144,7 @@ class Root(TkinterDnD.Tk):
                                             command=self.detect_key)
         self.detect_key_button.place(x=50, y=50)
         self.detect_key_label = ttk.Label(self.music_function_frame, text='')
-        self.detect_key_label.place(x=160, y=50)
+        self.detect_key_label.place(x=170, y=50)
 
         self.channel_label = ttk.Label(self.music_function_frame,
                                        text='Channel')
@@ -199,18 +205,18 @@ class Root(TkinterDnD.Tk):
                                                  text='From Mode')
         self.modulation_before_label.place(x=50, y=250)
         self.modulation_before_entry = ttk.Entry(self.music_function_frame,
-                                                 width=20)
+                                                 width=10)
         self.modulation_before_entry.place(x=150, y=250)
         self.modulation_after_label = ttk.Label(self.music_function_frame,
                                                 text='to Mode')
-        self.modulation_after_label.place(x=50, y=300)
+        self.modulation_after_label.place(x=250, y=250)
         self.modulation_after_entry = ttk.Entry(self.music_function_frame,
-                                                width=20)
-        self.modulation_after_entry.place(x=150, y=300)
+                                                width=10)
+        self.modulation_after_entry.place(x=320, y=250)
         self.modulation_play_button = ttk.Button(self.music_function_frame,
                                                  text='Play Modulation',
                                                  command=self.play_modulation)
-        self.modulation_play_button.place(x=50, y=350)
+        self.modulation_play_button.place(x=50, y=300)
         self.play_reverse_button = ttk.Button(self.music_function_frame,
                                               text='Play Reverse',
                                               command=self.play_reverse)
@@ -230,6 +236,12 @@ class Root(TkinterDnD.Tk):
         self.key_label.place(x=220, y=400)
         self.key_entry = ttk.Entry(self.music_function_frame, width=10)
         self.key_entry.place(x=260, y=400)
+        self.shift_key_entry = ttk.Entry(self.music_function_frame, width=10)
+        self.shift_key_entry.place(x=200, y=350)
+        self.shift_key_play_button = ttk.Button(self.music_function_frame,
+                                                text='Play Shift Key',
+                                                command=self.play_shift_key)
+        self.shift_key_play_button.place(x=50, y=350)
 
     def init_message_region(self):
         self.msg = ttk.Label(self, text='Currently no actions')
@@ -244,6 +256,28 @@ class Root(TkinterDnD.Tk):
         self.init_chorus_parameters_bar()
         self.init_midi_cc_bar()
         self.init_pitch_bend_bar()
+
+    def init_playlist_region(self):
+        self.playlist_choose_path_button = ttk.Button(
+            self.playlist_frame,
+            text='Choose path',
+            command=self.choose_playlist_path)
+        self.playlist_choose_path_button.place(x=50, y=50)
+        self.playlist_path_label = ttk.Label(self.playlist_frame,
+                                             text='Not chosen')
+        self.playlist_path_label.place(x=220, y=52)
+        self.playlist_msg_label = ttk.Label(self.playlist_frame, text='')
+        self.playlist_msg_label.place(x=50, y=100)
+        self.playlist_play_random_files_button = ttk.Button(
+            self.playlist_frame,
+            text='Play a random MIDI file',
+            command=self.playlist_play_random_file)
+        self.playlist_play_random_files_button.place(x=50, y=150)
+        self.playlist_current_file_label = ttk.Label(self.playlist_frame,
+                                                     text='')
+        self.playlist_current_file_label.place(x=220, y=150)
+        self.current_playlist_path = None
+        self.playlist_files = []
 
     def init_volume_bar(self):
         self.volume_slider = StringVar()
@@ -664,6 +698,35 @@ class Root(TkinterDnD.Tk):
         self.msg.configure(text=text)
         self.msg.update()
 
+    def choose_playlist_path(self):
+        current_path = filedialog.askdirectory(title='choose path')
+        if current_path:
+            self.current_playlist_path = current_path
+            self.playlist_path_label.configure(text=current_path)
+            self.update()
+            self.playlist_files = self.get_all_midi_files(
+                self.current_playlist_path)
+            self.playlist_msg_label.configure(
+                text=f'found {len(self.playlist_files)} MIDI files')
+
+    def get_all_midi_files(self, path):
+        result = []
+        for each in os.listdir(path):
+            current_path = os.path.join(path, each)
+            if os.path.isfile(current_path):
+                if os.path.splitext(each)[1].lower() == '.mid':
+                    result.append(current_path)
+            else:
+                result.extend(self.get_all_midi_files(current_path))
+        return result
+
+    def playlist_play_random_file(self):
+        if self.playlist_files:
+            current_file = random.choice(self.playlist_files)
+            self.playlist_current_file_label.configure(text=current_file)
+            self.choose_midi(current_file)
+            self.play_midi()
+
     def choose_midi(self, current_midi_file=None):
         if current_midi_file is None:
             current_midi_file = filedialog.askopenfilename(
@@ -772,26 +835,28 @@ class Root(TkinterDnD.Tk):
         if self.current_midi_file and self.current_soundfont_file:
             if self.current_sf2.playing:
                 self.current_sf2.stop()
+            self.paused = False
             self.init_player_bar(self.current_midi_file)
             self.start_play(self.current_midi_file)
 
     def pause_midi(self):
-        if self.current_sf2.playing:
-            self.paused = True
-            self.show(f'Pause playing')
-            self.current_sf2.pause()
-        if self.bar_move_id:
-            self.after_cancel(self.bar_move_id)
-            self.after_cancel(self.change_bpm_id)
-            self.after_cancel(self.change_instrument_id)
-            self.bar_move_id = None
+        if not self.paused:
+            if self.current_sf2.playing:
+                self.paused = True
+                self.show(f'Pause playing')
+                self.current_sf2.pause()
+            if self.bar_move_id:
+                self.after_cancel(self.bar_move_id)
+                self.after_cancel(self.change_bpm_id)
+                self.after_cancel(self.change_instrument_id)
+                self.bar_move_id = None
 
     def unpause_midi(self):
         if self.paused:
             self.paused = False
             self.show(f'Continue playing')
             self.current_sf2.unpause()
-        self.bar_move_id = self.after(1000, self.player_bar_move)
+            self.bar_move_id = self.after(1000, self.player_bar_move)
 
     def stop_midi(self):
         if self.current_sf2.playing:
@@ -874,7 +939,8 @@ class Root(TkinterDnD.Tk):
             self.current_midi_file_read = rs.mp.read(self.current_midi_file)
         current_key = rs.mp.alg.detect_scale(
             self.current_midi_file_read.quick_merge(), most_appear_num=3)
-        self.detect_key_label.configure(text=str(current_key))
+        current_key = textwrap.fill(current_key, width=50)
+        self.detect_key_label.configure(text=current_key)
 
     def play_reverse(self):
         if not self.current_midi_file_read:
@@ -894,6 +960,24 @@ class Root(TkinterDnD.Tk):
         self.init_player_bar('temp.mid')
         self.start_play('temp.mid')
         self.already_load = False
+
+    def play_shift_key(self):
+        current_shift = self.shift_key_entry.get()
+        if current_shift:
+            try:
+                current_shift = int(current_shift)
+            except:
+                self.show(f'Error: shift key number must be an integer')
+                return
+            if not self.current_midi_file_read:
+                self.current_midi_file_read = rs.mp.read(
+                    self.current_midi_file)
+            shift_key_file = self.current_midi_file_read + current_shift
+            rs.mp.write(shift_key_file, name='temp.mid')
+            self.already_load = False
+            self.init_player_bar('temp.mid')
+            self.start_play('temp.mid')
+            self.already_load = False
 
     def get_setting(self, parameter):
         return self.current_sf2.synth.get_setting(f'synth.{parameter}')
