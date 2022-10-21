@@ -703,6 +703,7 @@ class Root(TkinterDnD.Tk):
         if current_path:
             self.current_playlist_path = current_path
             self.playlist_path_label.configure(text=current_path)
+            self.playlist_msg_label.configure(text='Searching MIDI files ...')
             self.update()
             self.playlist_files = self.get_all_midi_files(
                 self.current_playlist_path)
