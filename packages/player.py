@@ -702,7 +702,8 @@ class Root(TkinterDnD.Tk):
         current_path = filedialog.askdirectory(title='choose path')
         if current_path:
             self.current_playlist_path = current_path
-            self.playlist_path_label.configure(text=current_path)
+            self.playlist_path_label.configure(
+                text=textwrap.fill(current_path, width=90))
             self.playlist_msg_label.configure(text='Searching MIDI files ...')
             self.update()
             self.playlist_files = self.get_all_midi_files(
@@ -724,7 +725,8 @@ class Root(TkinterDnD.Tk):
     def playlist_play_random_file(self):
         if self.playlist_files:
             current_file = random.choice(self.playlist_files)
-            self.playlist_current_file_label.configure(text=current_file)
+            self.playlist_current_file_label.configure(
+                text=textwrap.fill(current_file, width=90))
             self.choose_midi(current_file)
             self.play_midi()
 
