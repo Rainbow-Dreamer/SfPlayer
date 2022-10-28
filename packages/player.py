@@ -86,6 +86,7 @@ class Label(QtWidgets.QLabel):
         if font is None:
             font = QtGui.QFont('Consolas', 10)
         self.setFont(set_font(font, dpi))
+        self.adjustSize()
 
     def place(self, x, y):
         self.move(x, y)
