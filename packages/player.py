@@ -199,6 +199,14 @@ class Root(QtWidgets.QMainWindow):
     def dropEvent(self, event):
         current_path = [i.toLocalFile() for i in event.mimeData().urls()]
         self.drop_file_path = current_path
+        if self.drop_file_path:
+            current_file = self.drop_file_path[0]
+            if os.path.isfile(current_file):
+                extension = os.path.splitext(current_file)[1][1:]
+                if extension.lower() == 'mid':
+                    self.choose_midi(current_midi_file=current_file)
+                elif extension.lower() in ['sf2', 'sf3', 'dls']:
+                    self.choose_soundfont(current_soundfont_file=current_file)
 
     def init_parameters(self):
         self.current_midi_file = None
@@ -736,18 +744,6 @@ class Root(QtWidgets.QMainWindow):
             self.program_box.setCurrentText(
                 str(self.whole_instruments_with_number[current_program]))
             self.bank_box.setCurrentText(str(current_bank))
-
-    def drag_files(self, e):
-        if not (e.data[0] == '{' and e.data[-1] == '}'):
-            current_file = e.data
-        else:
-            current_file = e.data[1:-1]
-        if os.path.isfile(current_file):
-            extension = os.path.splitext(current_file)[1][1:]
-            if extension.lower() == 'mid':
-                self.choose_midi(current_file)
-            elif extension.lower() in ['sf2', 'sf3', 'dls']:
-                self.choose_soundfont(current_file)
 
     def player_bar_move(self):
         if self.current_sf2.get_status() == 3:
