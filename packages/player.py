@@ -12,9 +12,10 @@ from ast import literal_eval
 import textwrap
 import mido_fix as mido
 import random
+import json
 
-with open('packages/config.py', encoding='utf-8') as f:
-    exec(f.read())
+with open('packages/config.json', encoding='utf-8') as f:
+    globals().update(json.load(f))
 
 
 def set_font(font, dpi):
@@ -303,7 +304,7 @@ class Root(QtWidgets.QMainWindow):
         self.channel_label.place(x=500, y=20)
         self.instrument_label = Label(self.music_function_frame,
                                       text='Instrument')
-        self.instrument_label.place(x=630, y=20)
+        self.instrument_label.place(x=650, y=20)
         self.custom_play_listbox = QtWidgets.QListWidget(
             self.music_function_frame)
         self.instrument_listbox = QtWidgets.QListWidget(
@@ -312,7 +313,7 @@ class Root(QtWidgets.QMainWindow):
         for k in range(16):
             self.custom_play_listbox.insertItem(k, f'Channel {k+1}')
         self.custom_play_listbox.move(500, 50)
-        self.custom_play_listbox.setFixedSize(100, 310)
+        self.custom_play_listbox.setFixedSize(120, 310)
         self.custom_play_listbox.clicked.connect(
             self.show_current_program_and_bank)
         self.whole_instruments = list(rs.mp.database.INSTRUMENTS.keys())
@@ -322,7 +323,7 @@ class Root(QtWidgets.QMainWindow):
         for i, j in rs.mp.database.drum_set_dict.items():
             self.whole_instruments_with_number[
                 i - 1] = f'{self.whole_instruments_with_number[i-1]} / {j}'
-        self.instrument_listbox.move(630, 50)
+        self.instrument_listbox.move(650, 50)
         self.instrument_listbox.setFixedSize(150, 310)
         self.program_box = QtWidgets.QComboBox(self.music_function_frame)
         self.program_box.setFixedWidth(250)
@@ -552,7 +553,8 @@ class Root(QtWidgets.QMainWindow):
 
     def show_current_pitch_bend(self):
         current_pitch_bend = self.get_current_pitch_bend()
-        self.pitch_bend_slider.set(f'Pitch Bend  {current_pitch_bend}%')
+        self.pitch_bend_slider_label.setText(
+            f'Pitch Bend  {current_pitch_bend}%')
         self.set_move_pitch_bend_bar.change(current_pitch_bend)
 
     def change_move_pitch_bend_bar(self, e):
