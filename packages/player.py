@@ -1062,7 +1062,7 @@ class Root(QtWidgets.QMainWindow):
             self.current_midi_file_read = rs.mp.read(self.current_midi_file)
         current_key = rs.mp.alg.detect_scale(
             self.current_midi_file_read.quick_merge(), most_appear_num=3)
-        current_key = textwrap.fill(current_key, width=50)
+        current_key = textwrap.fill(current_key, width=40)
         self.detect_key_label.configure(text=current_key)
 
     def play_reverse(self):
