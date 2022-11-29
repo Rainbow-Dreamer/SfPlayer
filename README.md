@@ -43,8 +43,6 @@ Click on the `Play` button to start playing the MIDI file with the loaded SoundF
 
 Click on the playback bar or mouse drag to change the current playing position of the MIDI file.
 
-Turn the `Split Channels` button on to do special split channels operation when the MIDI file has all of the channels on a single track, this function works when you export the audio or play the MIDI file using music functions.
-
 ### Synth Settings
 
 This part is straightforward, for the control parameters like `MIDI CC` or `pitch bend`, when you select a new MIDI CC value or new channel number, the values will be updated as the current control value of the channel.
@@ -62,6 +60,10 @@ You can change the current program and bank of the selected channel in the `Prog
 In the `Instrument` box, the instrument names are the actual preset name of the corresponding program in the SoundFont file you use to play, while the instrument names in the `Instrument` box are the corresponding program names of the General MIDI standard.
 
 For modulation of the MIDI file, you can enter modes like `C major` in the `From mode` and `to Mode` entry box, the note name supports both uppercase and lowercase, sharp and flat, but you need to make sure to have a space between the note name and the mode name. The supported modes are defined in `packages/musicpy/database.py` as the parameter `scaleTypes`, you can customize the supported modes by adding the new mode with the mode name and the intervals.
+
+### Playlist
+
+You can choose a directory to play a random MIDI file from the directory.
 
 ### Messages
 
