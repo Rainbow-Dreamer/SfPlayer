@@ -60,7 +60,7 @@ def method_wrapper(cls):
     return method_decorator
 
 
-def to_note(notename, duration=0.25, volume=100, pitch=4, channel=None):
+def to_note(notename, duration=1 / 4, volume=100, pitch=4, channel=None):
     if any(all(i in notename for i in j) for j in ['()', '[]', '{}']):
         split_symbol = '(' if '(' in notename else (
             '[' if '[' in notename else '{')
@@ -85,7 +85,7 @@ def to_note(notename, duration=0.25, volume=100, pitch=4, channel=None):
         return note(name, num, duration, volume, channel)
 
 
-def degree_to_note(degree, duration=0.25, volume=100, channel=None):
+def degree_to_note(degree, duration=1 / 4, volume=100, channel=None):
     name = database.standard_reverse[degree % 12]
     num = (degree // 12) - 1
     return note(name, num, duration, volume, channel)
@@ -101,7 +101,7 @@ def note_to_degree(obj):
     return database.standard[obj.name] + 12 * (obj.num + 1)
 
 
-def trans_note(notename, duration=0.25, volume=100, pitch=4, channel=None):
+def trans_note(notename, duration=1 / 4, volume=100, pitch=4, channel=None):
     num = ''.join([x for x in notename if x.isdigit()])
     if not num:
         num = pitch
@@ -152,7 +152,7 @@ def secondary_dom7(root, mode='major'):
 
 def getchord_by_interval(start,
                          interval1,
-                         duration=0.25,
+                         duration=1 / 4,
                          interval=0,
                          cummulative=True,
                          start_time=0):
@@ -182,13 +182,14 @@ def inversion(current_chord, num=1):
 
 def getchord(start,
              mode=None,
-             duration=0.25,
+             duration=1 / 4,
              intervals=None,
              interval=None,
              cummulative=True,
              pitch=4,
              ind=0,
-             start_time=0):
+             start_time=0,
+             custom_mapping=None):
     if not isinstance(start, note):
         start = to_note(start, pitch=pitch)
     if interval is not None:
@@ -202,11 +203,12 @@ def getchord(start,
     mode = mode.lower().replace(' ', '')
     initial = start.degree
     chordlist = [start]
-    interval_premode = database.chordTypes(premode, mode=1, index=ind)
+    current_chord_types = database.chordTypes if custom_mapping is None else custom_mapping
+    interval_premode = current_chord_types(premode, mode=1, index=ind)
     if interval_premode != 'not found':
         interval = interval_premode
     else:
-        interval_mode = database.chordTypes(mode, mode=1, index=ind)
+        interval_mode = current_chord_types(mode, mode=1, index=ind)
         if interval_mode != 'not found':
             interval = interval_mode
         else:
@@ -1122,7 +1124,7 @@ def modulation(current_chord, old_scale, new_scale, **args):
     return current_chord.modulation(old_scale, new_scale, **args)
 
 
-def trans(obj, pitch=4, duration=0.25, interval=None):
+def trans(obj, pitch=4, duration=1 / 4, interval=None, custom_mapping=None):
     obj = obj.replace(' ', '')
     if ':' in obj:
         current = obj.split(':')
@@ -1145,40 +1147,45 @@ def trans(obj, pitch=4, duration=0.25, interval=None):
                    'M',
                    pitch=pitch,
                    duration=duration,
-                   intervals=interval)
+                   intervals=interval,
+                   custom_mapping=custom_mapping)
     if '/' not in obj:
         check_structure = obj.split(',')
         check_structure_len = len(check_structure)
         if check_structure_len > 1:
             return trans(check_structure[0], pitch)(','.join(
                 check_structure[1:])) % (duration, interval)
+        current_chord_types = database.chordTypes if custom_mapping is None else custom_mapping
         N = len(obj)
         if N == 2:
             first = obj[0]
             types = obj[1]
-            if first in database.standard and types in database.chordTypes:
+            if first in database.standard and types in current_chord_types:
                 return chd(first,
                            types,
                            pitch=pitch,
                            duration=duration,
-                           intervals=interval)
+                           intervals=interval,
+                           custom_mapping=custom_mapping)
         elif N > 2:
             first_two = obj[:2]
             type1 = obj[2:]
-            if first_two in database.standard and type1 in database.chordTypes:
+            if first_two in database.standard and type1 in current_chord_types:
                 return chd(first_two,
                            type1,
                            pitch=pitch,
                            duration=duration,
-                           intervals=interval)
+                           intervals=interval,
+                           custom_mapping=custom_mapping)
             first_one = obj[0]
             type2 = obj[1:]
-            if first_one in database.standard and type2 in database.chordTypes:
+            if first_one in database.standard and type2 in current_chord_types:
                 return chd(first_one,
                            type2,
                            pitch=pitch,
                            duration=duration,
-                           intervals=interval)
+                           intervals=interval,
+                           custom_mapping=custom_mapping)
     else:
         parts = obj.split('/')
         part1, part2 = parts[0], '/'.join(parts[1:])
