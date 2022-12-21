@@ -5355,7 +5355,7 @@ class chord_type:
                     altered_msg = ''
                 if self.omit:
                     if show_degree:
-                        omit_msg = f'omit {", ".join([str(i) for i in self.omit])}'
+                        omit_msg = f'omit {", ".join([i if not ("/" not in i and (i.startswith("b") or i.startswith("#"))) else i[1:] for i in self.omit])}'
                     else:
                         current_omit = []
                         for i in self.omit:
@@ -5366,6 +5366,8 @@ class chord_type:
                                 if current_degree is not None:
                                     current_omit.append(current_degree.name)
                             else:
+                                if i.startswith('b') or i.startswith('#'):
+                                    i = i[1:]
                                 current_omit.append(i)
                         omit_msg = f'omit {", ".join(current_omit)}'
                 else:
@@ -5392,6 +5394,8 @@ class chord_type:
                     current_order = [0, 1, 2, 3, 4]
                 else:
                     current_order = self.order
+                if not show_voicing and 3 in current_order:
+                    current_order.remove(3)
                 other_msg = [other_msg[i] for i in current_order]
                 other_msg = [i for i in other_msg if i]
                 if other_msg:
