@@ -1029,8 +1029,12 @@ class Root(QtWidgets.QMainWindow):
             except:
                 self.show_msg('Error: Invalid mode')
                 return
-            modulation_piece = rs.mp.read(self.current_midi_file).modulation(
-                before_mode, after_mode)
+            try:
+                modulation_piece = rs.mp.read(
+                    self.current_midi_file).modulation(before_mode, after_mode)
+            except:
+                self.show_msg('Invalid modulation')
+                return
             rs.mp.write(modulation_piece, name='modulation.mid')
             self.already_load = False
             self.init_player_bar('modulation.mid')
