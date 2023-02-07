@@ -20,7 +20,7 @@ with open('packages/config.json', encoding='utf-8') as f:
 
 def set_font(font, dpi):
     if dpi != 96.0:
-        font.setPointSize(font.pointSize() * (96.0 / dpi))
+        font.setPointSize(int(font.pointSize() * (96.0 / dpi)))
     return font
 
 
