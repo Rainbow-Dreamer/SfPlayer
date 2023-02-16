@@ -66,6 +66,7 @@ class Button(QtWidgets.QPushButton):
         if font is None:
             font = QtGui.QFont('Consolas', 10)
         self.setFont(set_font(font, dpi))
+        self.adjustSize()
 
     def place(self, x, y):
         self.move(x, y)
@@ -156,6 +157,7 @@ class CheckBox(QtWidgets.QCheckBox):
         if font is None:
             font = QtGui.QFont('Consolas', 10)
         self.setFont(set_font(font, dpi))
+        self.adjustSize()
 
     def place(self, x, y):
         self.move(x, y)
@@ -396,7 +398,7 @@ class Root(QtWidgets.QMainWindow):
 
     def init_message_region(self):
         self.msg = Label(self, text='Currently no actions', x=50, y=480)
-        self.msg.setFixedWidth(500)
+        self.msg.setFixedWidth(800)
 
     def init_synth_control_region(self):
         self.init_volume_bar()
