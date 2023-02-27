@@ -192,7 +192,7 @@ class Root(QtWidgets.QMainWindow):
         if event.mimeData().hasUrls:
             event.accept()
         else:
-            event.ingore()
+            event.ignore()
 
     def dropEvent(self, event):
         current_path = [i.toLocalFile() for i in event.mimeData().urls()]
