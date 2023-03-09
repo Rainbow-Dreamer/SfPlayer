@@ -2662,20 +2662,27 @@ class scale:
         else:
             return self.inversion(n)
 
-    def _parse_scale_text(self, text):
+    def _parse_scale_text(self, text, rootpitch):
         octaves = None
-        if '.' in text:
-            text, octaves = text.split('.', 1)
-        if text.endswith('#'):
-            result = self[int(text[:-1]) - 1] + 1
-        elif text.endswith('b'):
-            result = self[int(text[:-1]) - 1] - 1
+        if ';' in text:
+            result = [
+                self._parse_scale_text(i, rootpitch) for i in text.split(';')
+            ]
         else:
-            result = self[int(text) - 1]
-        if octaves:
-            octaves = int(octaves) * database.octave
-            result += octaves
-        return result, octaves
+            if '.' in text:
+                text, octaves = text.split('.', 1)
+            current_notes = copy(self.notes)
+            if text.endswith('#'):
+                result = current_notes[int(text[:-1]) - 1] + 1
+            elif text.endswith('b'):
+                result = current_notes[int(text[:-1]) - 1] - 1
+            else:
+                result = current_notes[int(text) - 1]
+            result.num = rootpitch
+            if octaves:
+                octaves = int(octaves) * database.octave
+                result += octaves
+        return result
 
     def get(self,
             current_ind,
@@ -2707,8 +2714,6 @@ class scale:
                     duration = _process_note(duration)
                     interval = _process_note(
                         interval) if interval != '.' else duration
-                if notename not in ['r', '-']:
-                    intervals.append(interval)
                 if notename == 'r':
                     if not notes_result:
                         start_time += duration
@@ -2720,15 +2725,21 @@ class scale:
                     if intervals:
                         intervals[-1] += duration
                 else:
-                    current_note, current_octave = self._parse_scale_text(
-                        notename)
-                    if not current_octave:
-                        current_note = mp.to_note(current_note.name, duration,
-                                                  volume, rootpitch)
+                    current_note = self._parse_scale_text(notename, rootpitch)
+                    if isinstance(current_note, list):
+                        for k in current_note:
+                            k.duration = duration
+                            k.volume = volume
+                        notes_result.extend(current_note)
+                        current_intervals = [0] * (len(current_note) - 1) + [
+                            interval
+                        ]
+                        intervals.extend(current_intervals)
                     else:
-                        current_note = mp.to_note(current_note.name, duration,
-                                                  volume, current_note.num)
-                    notes_result.append(current_note)
+                        current_note.duration = duration
+                        current_note.volume = volume
+                        notes_result.append(current_note)
+                        intervals.append(interval)
             else:
                 if each == 'r':
                     current_interval = default_interval if default_interval != 0 else 1 / 4
@@ -2743,17 +2754,22 @@ class scale:
                     if intervals:
                         intervals[-1] += current_interval
                 else:
-                    intervals.append(default_interval)
-                    current_note, current_octave = self._parse_scale_text(each)
-                    if not current_octave:
-                        current_note = mp.to_note(current_note.name,
-                                                  duration=default_duration,
-                                                  pitch=rootpitch)
+
+                    current_note = self._parse_scale_text(each, rootpitch)
+                    if isinstance(current_note, list):
+                        for k in current_note:
+                            k.duration = default_duration
+                            k.volume = default_volume
+                        notes_result.extend(current_note)
+                        current_intervals = [0] * (len(current_note) - 1) + [
+                            default_interval
+                        ]
+                        intervals.extend(current_intervals)
                     else:
-                        current_note = mp.to_note(current_note.name,
-                                                  duration=default_duration,
-                                                  pitch=current_note.num)
-                    notes_result.append(current_note)
+                        current_note.duration = default_duration
+                        current_note.volume = default_volume
+                        notes_result.append(current_note)
+                        intervals.append(default_interval)
         current_chord = chord(notes_result, interval=intervals)
         return current_chord
 
@@ -5830,8 +5846,6 @@ def _read_notes(note_ls,
                     duration = _process_note(duration)
                     interval = _process_note(
                         interval) if interval != '.' else duration
-                if notename not in ['r', '-']:
-                    intervals.append(interval)
                 if notename == 'r':
                     if not notes_result:
                         start_time += duration
@@ -5846,6 +5860,7 @@ def _read_notes(note_ls,
                     current_note = mp.to_note(notename, duration, volume,
                                               rootpitch)
                     notes_result.append(current_note)
+                    intervals.append(interval)
                     last_non_num_note = notes_result[-1]
             elif each != '-' and (each.startswith('+')
                                   or each.startswith('-')):
