@@ -93,3 +93,9 @@ You can download ffmpeg from [here](https://github.com/Rainbow-Dreamer/musicpy/r
 ![image](previews/3.jpg)
 
 ![image](previews/4.jpg)
+
+## Donation
+
+This project is developed by Rainbow Dreamer on his spare time. If you feel this project is useful to you and want to support it and it's future development, please consider buy me a coffee, I appreciate any amount.
+
+[![Support via PayPal](https://cdn.rawgit.com/twolfson/paypal-github-button/1.0.0/dist/button.svg)](https://www.paypal.com/donate/?business=7XSUZCQNT4M4Y&no_recurring=0&currency_code=CAD)
