@@ -27,7 +27,7 @@ SfPlayer is a simple SoundFont player that has the following functionality:
 
 ### Platform
 
-SfPlayer currently only supports Windows.
+SfPlayer currently only supports Windows, you can open `SfPlayer.exe` to use the software. On Linux and macOS, you can install python >= 3.7 and install the required packages (refer to building from source section)  to run the program.
 
 ### Switching pages
 
@@ -93,6 +93,17 @@ You can download ffmpeg from [here](https://github.com/Rainbow-Dreamer/musicpy/r
 ![image](previews/3.jpg)
 
 ![image](previews/4.jpg)
+
+## Building from source
+
+If you cannot open `SfPlayer.exe` on your current pc and system, you can try to compile from source. Here are the steps.
+
+1. install python >= 3.7
+2. open cmd, run `pip install pyqt5, sf2_loader, dataclasses, pyinstaller`
+3. copy and paste the file `player start program.pyw` from `SfPlayer-main/packages` folder to `SfPlayer-main` folder.
+4. under `SfPlayer-main` folder, open cmd, run `pyinstaller -w -F "player start program.pyw" --hidden-import dataclasses` to start creating executable
+5. when the compiling is finished, go to `SfPlayer-main/dist` folder, you will see an executable file there, rename it to `SfPlayer.exe`, copy and paste the exe file to SfPlayer-main folder, replacing the old exe file
+6. now you can open the new exe file to open the software
 
 ## Donation
 
