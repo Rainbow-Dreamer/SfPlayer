@@ -100,7 +100,7 @@ If you cannot open `SfPlayer.exe` on your current pc and system, you can try to 
 
 1. install python >= 3.7
 2. open cmd, run `pip install pyqt5, sf2_loader, dataclasses, pyinstaller`
-3. copy and paste the file `player start program.pyw` from `SfPlayer-main/packages` folder to `SfPlayer-main` folder.
+3. copy and paste the file `player start program.pyw` from `SfPlayer-main/packages` folder to `SfPlayer-main` folder, change the line `abs_path = os.path.dirname(os.path.abspath(__file__))` to `abs_path = os.path.dirname(sys.executable)`
 4. under `SfPlayer-main` folder, open cmd, run `pyinstaller -w -F "player start program.pyw" --hidden-import dataclasses` to start creating executable
 5. when the compiling is finished, go to `SfPlayer-main/dist` folder, you will see an executable file there, rename it to `SfPlayer.exe`, copy and paste the exe file to SfPlayer-main folder, replacing the old exe file
 6. now you can open the new exe file to open the software
