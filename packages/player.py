@@ -1,14 +1,3 @@
-from PyQt5 import QtGui, QtWidgets, QtCore
-import os
-import sys
-
-sys.path.append('packages')
-import sf2_loader as rs
-import textwrap
-import mido_fix as mido
-import random
-import json
-
 with open('packages/config.json', encoding='utf-8') as f:
     globals().update(json.load(f))
 
