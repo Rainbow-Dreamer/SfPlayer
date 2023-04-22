@@ -1050,8 +1050,12 @@ class Root(QtWidgets.QMainWindow):
     def detect_key(self):
         if not self.current_midi_file_read:
             self.current_midi_file_read = rs.mp.read(self.current_midi_file)
-        current_key = rs.mp.alg.detect_scale(
-            self.current_midi_file_read.quick_merge(), most_appear_num=3)
+        current_key = rs.mp.alg.detect_scale3(
+            self.current_midi_file_read.quick_merge(),
+            most_appear_num=most_appear_num,
+            major_minor_preference=major_minor_preference,
+            unit=unit,
+            key_accuracy_tol=key_accuracy_tol)
         current_key = textwrap.fill(current_key, width=40)
         self.detect_key_label.configure(text=current_key)
 
