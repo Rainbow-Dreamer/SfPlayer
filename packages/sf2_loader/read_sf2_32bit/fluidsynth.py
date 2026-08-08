@@ -1006,7 +1006,11 @@ class Synth:
         return fluid_midi_event_get_value(event)
 
     def play_midi_file(self, filename):
+        if hasattr(self, 'player') and self.player is not None:
+            self.play_midi_stop()
         self.player = new_fluid_player(self.synth)
+        if self.player is None:
+            return FLUID_FAILED
         if self.player == None: return FLUID_FAILED
         if self.custom_router_callback != None:
             fluid_player_set_playback_callback(self.player,
@@ -1032,6 +1036,7 @@ class Synth:
         if fluid_player_seek:
             status = fluid_player_seek(self.player, 0)
         delete_fluid_player(self.player)
+        self.player = None
         self.system_reset()
         return status
 
